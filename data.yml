@@ -1,0 +1,20 @@
+crystals:
+  550e8400-e29b-41d4-a716-446655440000:
+    config-id: metin_common
+    location:
+      world: world
+      x: 100.5
+      y: 64.0
+      z: 200.5
+    current-hp: 50
+    is-destroyed: false
+  550e8400-e29b-41d4-a716-446655440001:
+    config-id: metin_rare
+    location:
+      world: world
+      x: 150.5
+      y: 70.0
+      z: 250.5
+    current-hp: 0
+    is-destroyed: true
+    respawn-time: 1729267200000

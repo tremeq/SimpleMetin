@@ -1,0 +1,16 @@
+name: SimpleMetin
+version: 1.0.0
+main: me.simplemetin.SimpleMetin
+api-version: '1.21'
+author: TremeQu
+description: Advanced crystal mining system with respawning mechanics
+softdepend: [PlaceholderAPI]
+commands:
+  metin:
+    description: Main SimpleMetin command
+    usage: /metin <spawn|remove|list|respawn|reload|stats|givevoucher|boost|updateleaderboard>
+    permission: simplemetin.admin
+permissions:
+  simplemetin.admin:
+    description: Access to all SimpleMetin commands
+    default: op

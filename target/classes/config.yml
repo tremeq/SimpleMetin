@@ -1,0 +1,207 @@
+# ============================================
+# SimpleMetin Configuration
+# ============================================
+# Advanced crystal mining system with stats tracking, boost system, and PlaceholderAPI support
+#
+# PLACEHOLDERS (requires PlaceholderAPI):
+# Player Statistics:
+#   %metin_crystals_destroyed%     - Total crystals destroyed
+#   %metin_total_damage%           - Total damage dealt
+#   %metin_items_received%         - Items received from crystals
+#   %metin_money_earned%           - Money earned from crystals
+#   %metin_type_<crystal_id>%      - Destroyed crystals by type (e.g., %metin_type_metin_common%)
+#
+# Boosts:
+#   %metin_boost_multiplier%       - Total boost multiplier (personal + global)
+#   %metin_boost_active%           - Is any boost active (true/false)
+#   %metin_personal_boost_multiplier% - Personal boost multiplier
+#   %metin_personal_boost_time%    - Personal boost time remaining
+#   %metin_global_boost_multiplier%   - Global boost multiplier
+#   %metin_global_boost_time%      - Global boost time remaining
+#
+# TOP Rankings (1-100 for each category):
+#   %metin_destroyed_top_1_name%   - Top player name (crystals destroyed)
+#   %metin_destroyed_top_1%        - Top player value (crystals destroyed)
+#   %metin_damage_top_1_name%      - Top player name (damage dealt)
+#   %metin_damage_top_1%           - Top player value (damage dealt)
+#   %metin_items_top_1_name%       - Top player name (items received)
+#   %metin_items_top_1%            - Top player value (items received)
+#   %metin_money_top_1_name%       - Top player name (money earned)
+#   %metin_money_top_1%            - Top player value (money earned)
+#
+# Full documentation: WSZYSTKIE_PLACEHOLDERY.md
+# ============================================
+
+settings:
+  save-interval: 300  # Auto-save interval in seconds
+  hologram-update-interval: 20  # Hologram update interval in ticks
+  actionbar-enabled: true  # Show actionbar messages
+  bossbar-enabled: true  # Show boss bars
+  bossbar-range: 30.0  # Boss bar visibility range
+  hit-cooldown: 1.0  # Cooldown between hits in seconds (0.0 to disable)
+  leaderboard-update-interval: 6000  # Leaderboard file update interval in ticks (6000 = 5 minutes)
+
+boosts:
+  bossbar:
+    enabled: true
+    update-interval: 20  # Update interval in ticks (20 = 1 second)
+    personal:
+      enabled: true
+      title: "&e&l⚡ PERSONAL BOOST &e%multiplier%x &7- &e%time%"
+      color: YELLOW  # BLUE, GREEN, PINK, PURPLE, RED, WHITE, YELLOW
+      style: SOLID  # SOLID, SEGMENTED_6, SEGMENTED_10, SEGMENTED_12, SEGMENTED_20
+    global:
+      enabled: true
+      title: "&6&l⭐ GLOBAL BOOST &6%multiplier%x &7- &6%time%"
+      color: GREEN
+      style: SEGMENTED_10
+  global:
+    enabled: true
+    stacking-mode: 1.0  # 1.0 = additive, 2.0 = multiplicative with personal
+  personal:
+    enabled: true
+    stacking-enabled: true  # Stack with global boost
+    voucher:
+      material: PAPER
+      name: "&e&l✦ DROP BOOST VOUCHER ✦"
+      lore:
+        - "&7Right-click to activate"
+        - "&7Boost: &e%multiplier%x"
+        - "&7Duration: &e%duration%"
+        - ""
+        - "&6&lPERSONAL BOOST"
+      glow: true
+      custom-model-data: 0  # Set to 0 to disable
+
+crystals:
+  metin_common:
+    display-name: "&e&lCommon Metin"
+    type: respawn
+    max-hp: 50
+    damage-per-hit: 1
+    respawn-time: 300
+    show-actionbar: true
+    show-bossbar: true
+    hologram:
+      enabled: true
+      range: 15.0
+      lines:
+        - "&e&lCOMMON METIN"
+        - "&7HP: &c%hp%&7/&c%max_hp%"
+        - "&aAttack to mine!"
+    hit-drops:
+      drop1:
+        item: DIAMOND
+        amount: 1
+        chance: 5.0
+        name: "&bMetin Diamond"
+        lore:
+          - "&7Obtained from Metin"
+      drop2:
+        item: GOLD_INGOT
+        amount: 2
+        chance: 15.0
+    hit-commands:
+      cmd1:
+        command: "eco give %player% 10"
+        chance: 20.0
+    death-drops:
+      drop1:
+        item: DIAMOND
+        amount: 5
+        chance: 100.0
+        name: "&bMetin Reward"
+      drop2:
+        item: EMERALD
+        amount: 3
+        chance: 50.0
+    death-commands:
+      cmd1:
+        command: "eco give %player% 500"
+        chance: 100.0
+      cmd2:
+        command: "give %player% diamond_sword"
+        chance: 25.0
+    death-effects:
+      particle: EXPLOSION_HUGE
+      sound: ENTITY_GENERIC_EXPLODE
+      volume: 1.0
+      pitch: 1.0
+
+  metin_rare:
+    display-name: "&d&lRare Metin"
+    type: one-time
+    max-hp: 150
+    damage-per-hit: 1
+    respawn-time: 0
+    show-actionbar: true
+    show-bossbar: true
+    hologram:
+      enabled: true
+      range: 20.0
+      lines:
+        - "&d&lRARE METIN"
+        - "&7HP: &c%hp%&7/&c%max_hp%"
+        - "&6Destroy for epic loot!"
+    hit-drops:
+      drop1:
+        item: DIAMOND
+        amount: 2
+        chance: 10.0
+      drop2:
+        item: EMERALD
+        amount: 1
+        chance: 8.0
+    hit-commands:
+      cmd1:
+        command: "eco give %player% 25"
+        chance: 15.0
+    death-drops:
+      drop1:
+        item: DIAMOND_BLOCK
+        amount: 3
+        chance: 100.0
+        name: "&d&lRare Metin Reward"
+        lore:
+          - "&7A valuable reward"
+          - "&7from the Rare Metin"
+      drop2:
+        item: NETHERITE_INGOT
+        amount: 1
+        chance: 30.0
+    death-commands:
+      cmd1:
+        command: "eco give %player% 2000"
+        chance: 100.0
+      cmd2:
+        command: "give %player% netherite_sword"
+        chance: 15.0
+      cmd3:
+        command: "broadcast &d%player% destroyed a Rare Metin!"
+        chance: 100.0
+    death-effects:
+      particle: DRAGON_BREATH
+      sound: ENTITY_ENDER_DRAGON_DEATH
+      volume: 1.5
+      pitch: 1.2
+
+messages:
+  # Set any message to "" (empty) to disable it
+  prefix: "&8[&eSimpleMetin&8]&r "
+  spawned: "&aSpawned crystal &e%id%&a at your location"
+  removed: "&cRemoved crystal &e%id%"
+  not-found: "&cCrystal &e%id%&c not found"
+  reloaded: "&aConfiguration reloaded successfully"
+  respawned: "&aManually respawned crystal &e%id%"
+  no-permission: "&cYou don't have permission to use this command"
+  invalid-world: "&cWorld &e%world%&c does not exist"
+  crystal-destroyed: "&e%display_name% &ahas been destroyed!"  # Set to "" to disable
+  crystal-hit: "&7Crystal HP: &c%hp%&7/&c%max_hp%"  # Set to "" to disable
+  respawn-countdown: "&7Respawns in: &e%time%s"
+  hit-cooldown: "&cYou must wait &e%time%s &cbefore attacking again!"  # Set to "" to disable
+  inventory-full: "&eYour inventory is full! Some items were dropped on the ground."  # Set to "" to disable
+  boost-activated: "&a&lBOOST ACTIVATED! &e%multiplier%x &adrop rate for &e%duration%"
+  boost-expired: "&c&lBOOST EXPIRED! &7Your drop boost has ended."
+  global-boost-activated: "&6&l[SERVER] &e%multiplier%x &6Global Drop Boost activated for &e%duration%&6!"
+  global-boost-expired: "&c&l[SERVER] &7Global Drop Boost has expired."
+  boost-already-active: "&cYou already have an active boost!"
