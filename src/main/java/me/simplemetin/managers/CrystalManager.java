@@ -5,25 +5,37 @@ import me.simplemetin.data.DataHandler;
 import me.simplemetin.events.MetinCrystalDestroyedEvent;
 import me.simplemetin.models.CrystalData;
 import me.simplemetin.models.CrystalType;
-import me.simplemetin.models.DropCommand;
-import me.simplemetin.models.DropItem;
+import me.simplemetin.models.DropTable;
 import me.simplemetin.utils.DropUtils;
+import me.simplemetin.utils.ParticleUtils;
 import org.bukkit.Bukkit;
+import org.bukkit.Chunk;
 import org.bukkit.Location;
-import org.bukkit.Particle;
 import org.bukkit.Sound;
+import org.bukkit.World;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.MemoryConfiguration;
+import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.EnderCrystal;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.TextDisplay;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
 
 public class CrystalManager {
+    public static final String CRYSTAL_TAG = "simplemetin";
+
+    private static final Pattern ID_PATTERN = Pattern.compile("[a-z0-9_-]{1,32}");
+    private static final Pattern UUID_PATTERN = Pattern.compile("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}");
+
     private final SimpleMetin plugin;
     private final HologramManager hologramManager;
     private final DataHandler dataHandler;
@@ -31,6 +43,10 @@ public class CrystalManager {
     private final Map<UUID, String> entityToCrystal = new ConcurrentHashMap<>();
     private final Map<String, BossBar> bossBars = new ConcurrentHashMap<>();
     private final Map<UUID, Long> playerCooldowns = new ConcurrentHashMap<>();
+    private final Set<String> missingConfigWarned = ConcurrentHashMap.newKeySet();
+    /** Parsed drop tables per "configId:hit|death", cleared on reload and when drops are edited. */
+    private final Map<String, DropTable> dropTables = new ConcurrentHashMap<>();
+    private final Random random = new Random();
     private BukkitTask updateTask;
     private BukkitTask saveTask;
 
@@ -40,11 +56,44 @@ public class CrystalManager {
         this.dataHandler = dataHandler;
     }
 
-    public void spawnCrystal(String id, String configId, Location location, String overrideName) {
+    // ── IDs ─────────────────────────────────────────────────────
+
+    public static boolean isValidId(String id) {
+        return id != null && ID_PATTERN.matcher(id).matches();
+    }
+
+    public static boolean isLegacyUuidId(String id) {
+        return id != null && UUID_PATTERN.matcher(id).matches();
+    }
+
+    public boolean isIdTaken(String id) {
+        return crystals.containsKey(id) || dataHandler.getPendingIds().contains(id);
+    }
+
+    /** Short type name used in IDs: "metin_common" -> "common". */
+    public static String shortTypeName(String configId) {
+        var name = configId.toLowerCase(Locale.ROOT);
+        if (name.startsWith("metin_") && name.length() > 6) name = name.substring(6);
+        name = name.replaceAll("[^a-z0-9_-]", "_");
+        return name.length() > 26 ? name.substring(0, 26) : name;
+    }
+
+    /** First free "&lt;type&gt;-&lt;n&gt;" ID, e.g. common-1, common-2... */
+    public String generateId(String configId) {
+        var base = shortTypeName(configId);
+        for (int n = 1; ; n++) {
+            var id = base + "-" + n;
+            if (!isIdTaken(id)) return id;
+        }
+    }
+
+    // ── Spawning ────────────────────────────────────────────────
+
+    public CrystalData spawnCrystal(String id, String configId, Location location, String overrideName) {
         var config = plugin.getConfig().getConfigurationSection("crystals." + configId);
         if (config == null) {
             plugin.getLogger().warning("Crystal config not found: " + configId);
-            return;
+            return null;
         }
 
         var typeStr = config.getString("type", "one-time");
@@ -53,47 +102,201 @@ public class CrystalManager {
 
         var data = new CrystalData(id, configId, location, type, maxHp, overrideName);
 
-        spawnEntity(data);
         crystals.put(id, data);
+        spawnEntity(data);
 
         plugin.getLogger().info("Spawned crystal: " + id + " (type: " + configId + ") at " +
-                                location.getWorld().getName() + " " + location.getBlockX() + "," +
+                                data.getWorldName() + " " + location.getBlockX() + "," +
                                 location.getBlockY() + "," + location.getBlockZ());
+        return data;
     }
 
     private void spawnEntity(CrystalData data) {
-        var world = data.getLocation().getWorld();
+        if (plugin.getConfig().getBoolean("settings.bossbar-enabled", true)) {
+            createBossBar(data);
+        }
+        spawnWorldEntities(data);
+    }
+
+    /**
+     * Spawns the crystal entity and its hologram if the chunk is loaded; otherwise this happens on chunk load.
+     * Both are non-persistent, so they are never written to the chunk and cannot be duplicated by a restart or crash.
+     */
+    private void spawnWorldEntities(CrystalData data) {
+        var world = getLoadedWorld(data);
         if (world == null) return;
+
+        despawnWorldEntities(data);
 
         var crystal = world.spawn(data.getLocation(), EnderCrystal.class, c -> {
             c.setShowingBottom(false);
             c.setInvulnerable(false);
+            c.setPersistent(false);
+            c.addScoreboardTag(CRYSTAL_TAG);
+            c.addScoreboardTag("metin_" + data.getConfigId());
         });
 
         data.setEntity(crystal);
         entityToCrystal.put(crystal.getUniqueId(), data.getId());
 
         hologramManager.createHologram(data);
+    }
 
-        if (plugin.getConfig().getBoolean("settings.bossbar-enabled", true)) {
-            createBossBar(data);
+    private void despawnWorldEntities(CrystalData data) {
+        var entity = data.getEntity();
+        if (entity != null) {
+            entityToCrystal.remove(entity.getUniqueId());
+            if (!entity.isDead()) {
+                entity.remove();
+            }
+            data.setEntity(null);
         }
+        hologramManager.removeHologram(data);
+    }
+
+    /** Returns the crystal's world if it and the crystal's chunk are loaded, otherwise null. */
+    private World getLoadedWorld(CrystalData data) {
+        if (data.getWorldName() == null) return null;
+        var world = Bukkit.getWorld(data.getWorldName());
+        if (world == null || !world.isChunkLoaded(data.getChunkX(), data.getChunkZ())) return null;
+        return world;
+    }
+
+    private boolean isInChunk(CrystalData data, Chunk chunk) {
+        return chunk.getWorld().getName().equals(data.getWorldName())
+                && chunk.getX() == data.getChunkX()
+                && chunk.getZ() == data.getChunkZ();
+    }
+
+    private boolean hasLiveEntity(CrystalData data) {
+        return data.getEntity() != null && data.getEntity().isValid();
+    }
+
+    // ── Chunk lifecycle ─────────────────────────────────────────
+
+    public void handleChunkLoad(Chunk chunk) {
+        var worldName = chunk.getWorld().getName();
+        int x = chunk.getX();
+        int z = chunk.getZ();
+        // One tick later: the chunk is fully loaded and may already have been unloaded again
+        Bukkit.getScheduler().runTask(plugin, () -> spawnMissingEntities(worldName, x, z));
+    }
+
+    public void spawnMissingEntities(String worldName, int chunkX, int chunkZ) {
+        for (var data : crystals.values()) {
+            if (data.isDestroyed() || hasLiveEntity(data)) continue;
+            if (!worldName.equals(data.getWorldName()) || data.getChunkX() != chunkX || data.getChunkZ() != chunkZ) continue;
+            spawnWorldEntities(data);
+        }
+    }
+
+    public void handleChunkUnload(Chunk chunk) {
+        for (var data : crystals.values()) {
+            if (isInChunk(data, chunk)) {
+                despawnWorldEntities(data);
+            }
+        }
+    }
+
+    /**
+     * Removes metin crystals and holograms that are not tracked by the plugin: copies left in the world by
+     * versions that saved them with the chunk, and ArmorStand holograms of versions before TextDisplay holograms.
+     * Returns the number of removed entities.
+     */
+    public int removeOrphans(Collection<? extends Entity> entities) {
+        int removed = 0;
+        for (var entity : entities) {
+            if (entity.isDead()) continue;
+
+            boolean orphan = false;
+            if (entity instanceof EnderCrystal && entity.getScoreboardTags().contains(CRYSTAL_TAG)) {
+                orphan = !entityToCrystal.containsKey(entity.getUniqueId());
+            } else if (entity instanceof TextDisplay && entity.getScoreboardTags().contains(HologramManager.HOLOGRAM_TAG)) {
+                orphan = !hologramManager.isTracked(entity.getUniqueId());
+            } else if (entity instanceof ArmorStand stand) {
+                // Holograms are TextDisplays now: every metin ArmorStand is a leftover
+                orphan = stand.getScoreboardTags().contains(HologramManager.HOLOGRAM_TAG) || isLegacyHologram(stand);
+            }
+
+            if (orphan) {
+                entity.remove();
+                removed++;
+            }
+        }
+        if (removed > 0) {
+            plugin.getLogger().info("Removed " + removed + " orphaned metin entities");
+        }
+        return removed;
+    }
+
+    /** Holograms from the first versions had no tag: invisible marker stands right above a metin location. */
+    private boolean isLegacyHologram(ArmorStand stand) {
+        if (!stand.isMarker() || stand.isVisible() || !stand.isCustomNameVisible()) return false;
+
+        var loc = stand.getLocation();
+        if (loc.getWorld() == null) return false;
+        var worldName = loc.getWorld().getName();
+        for (var data : crystals.values()) {
+            var c = data.getLocation();
+            if (!worldName.equals(data.getWorldName())) continue;
+            double dy = loc.getY() - c.getY();
+            if (Math.abs(loc.getX() - c.getX()) < 0.01 && Math.abs(loc.getZ() - c.getZ()) < 0.01 && dy > 1.0 && dy < 2.6) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public void removeCrystal(String id) {
         var data = crystals.remove(id);
         if (data == null) return;
 
-        if (data.getEntity() != null && !data.getEntity().isDead()) {
-            entityToCrystal.remove(data.getEntity().getUniqueId());
-            data.getEntity().remove();
-        }
-
-        hologramManager.removeHologram(data);
+        despawnWorldEntities(data);
         removeBossBar(id);
 
         plugin.getLogger().info("Removed crystal: " + id);
     }
+
+    /**
+     * Config section of the crystal type. If the type was removed from config.yml the crystal keeps working
+     * with defaults (no drops) instead of silently ignoring hits; the admin is warned once per type.
+     */
+    private ConfigurationSection getCrystalConfig(CrystalData data) {
+        var config = plugin.getConfig().getConfigurationSection("crystals." + data.getConfigId());
+        if (config != null) return config;
+
+        if (missingConfigWarned.add(data.getConfigId())) {
+            plugin.getLogger().warning("Crystal type '" + data.getConfigId() + "' is missing in config.yml - crystals of this type use defaults and have no drops");
+        }
+        return new MemoryConfiguration();
+    }
+
+    /** Display name of a crystal: the override from /metin spawn or the type's display-name. */
+    public String getDisplayName(CrystalData data) {
+        if (data.getOverrideName() != null) return data.getOverrideName();
+        var config = plugin.getConfig().getConfigurationSection("crystals." + data.getConfigId());
+        return config != null ? config.getString("display-name", data.getConfigId()) : data.getConfigId();
+    }
+
+    public DropTable getDropTable(String configId, String moment) {
+        return dropTables.computeIfAbsent(configId + ":" + moment, key -> DropTable.load(
+                plugin.getConfig().getConfigurationSection("crystals." + configId), moment, plugin.getLogger()));
+    }
+
+    /** Drops cached drop tables (after editing drops in config.yml from a command). */
+    public void clearDropCache() {
+        dropTables.clear();
+    }
+
+    private boolean actionBarEnabled() {
+        return plugin.getConfig().getBoolean("settings.actionbar-enabled", true);
+    }
+
+    public void clearCooldown(UUID playerUuid) {
+        playerCooldowns.remove(playerUuid);
+    }
+
+    // ── Damage & destruction ────────────────────────────────────
 
     public void handleDamage(EnderCrystal crystal, Player damager) {
         var id = entityToCrystal.get(crystal.getUniqueId());
@@ -102,19 +305,17 @@ public class CrystalManager {
         var data = crystals.get(id);
         if (data == null || data.isDestroyed()) return;
 
+        var messages = plugin.getMessages();
         var cooldownSeconds = plugin.getConfig().getDouble("settings.hit-cooldown", 1.0);
         var now = System.currentTimeMillis();
         var cooldownMillis = (long) (cooldownSeconds * 1000);
 
-        if (playerCooldowns.containsKey(damager.getUniqueId())) {
-            var lastHit = playerCooldowns.get(damager.getUniqueId());
+        var lastHit = playerCooldowns.get(damager.getUniqueId());
+        if (lastHit != null) {
             var timeLeft = (lastHit + cooldownMillis) - now;
-
             if (timeLeft > 0) {
-                String message = plugin.getConfig().getString("messages.hit-cooldown", "&cYou must wait &e%time%s &cbefore attacking again!");
-                if (message != null && !message.isEmpty()) {
-                    message = message.replace("%time%", String.format("%.1f", timeLeft / 1000.0));
-                    damager.sendActionBar(net.kyori.adventure.text.Component.text(colorize(message)));
+                if (actionBarEnabled()) {
+                    messages.actionBar(damager, "hit-cooldown", "time", String.format(Locale.ROOT, "%.1f", timeLeft / 1000.0));
                 }
                 return;
             }
@@ -122,102 +323,83 @@ public class CrystalManager {
 
         playerCooldowns.put(damager.getUniqueId(), now);
 
-        var config = plugin.getConfig().getConfigurationSection("crystals." + data.getConfigId());
-        if (config == null) return;
+        var config = getCrystalConfig(data);
 
-        var damagePerHit = config.getInt("damage-per-hit", 1);
-        data.damage(damagePerHit);
+        // Strength below 1 (e.g. edited players.yml) would make the crystal unkillable while still rolling hit-drops
+        var strength = Math.max(1, plugin.getPlayerStatsManager().getDamage(damager.getUniqueId()));
+        var dealt = data.damage(strength);
 
-        // Track stats
+        // Track stats (only damage actually dealt, no overkill)
         var stats = plugin.getStatsManager().getOrCreateStats(damager.getUniqueId());
-        stats.addDamage(damagePerHit);
+        stats.addDamage(dealt);
         stats.updateLastSeen();
 
-        if (config.getBoolean("show-actionbar", true)) {
-            String message = plugin.getConfig().getString("messages.crystal-hit", "&7Crystal HP: &c%hp%&7/&c%max_hp%");
-            if (message != null && !message.isEmpty()) {
-                message = message.replace("%hp%", String.valueOf(data.getCurrentHp()))
-                        .replace("%max_hp%", String.valueOf(data.getMaxHp()));
-                damager.sendActionBar(net.kyori.adventure.text.Component.text(colorize(message)));
-            }
+        if (actionBarEnabled() && config.getBoolean("show-actionbar", true)) {
+            messages.actionBar(damager, "crystal-hit", "hp", data.getCurrentHp(), "max_hp", data.getMaxHp(),
+                    "damage", dealt, "display_name", getDisplayName(data));
         }
 
         hologramManager.updateHologram(data);
         updateBossBar(data);
 
-        var hitDrops = loadDropItems(config.getConfigurationSection("hit-drops"));
-        // Apply boost multiplier to drops
-        var boostedDrops = applyBoostToDrops(hitDrops, damager);
-        int itemsReceived = DropUtils.processDrops(boostedDrops, data.getLocation(), damager, plugin);
-
-        // Track items received
-        if (itemsReceived > 0) {
-            stats.addItemsReceived(itemsReceived);
-        }
-
-        var hitCommands = loadDropCommands(config.getConfigurationSection("hit-commands"));
-        long moneyEarned = DropUtils.executeCommands(hitCommands, damager);
-
-        // Track money earned from commands
-        if (moneyEarned > 0) {
-            stats.addMoneyEarned(moneyEarned);
-        }
+        var hit = rollRewards(data, "hit", damager);
+        if (hit.itemsReceived() > 0) stats.addItemsReceived(hit.itemsReceived());
+        if (hit.money() > 0) stats.addMoneyEarned(hit.money());
 
         if (data.isDead()) {
             handleDestruction(data, damager);
         }
     }
 
+    private record Rewards(List<ItemStack> items, List<String> commands, int itemsReceived, long money) {
+    }
+
+    private Rewards rollRewards(CrystalData data, String moment, Player player) {
+        var table = getDropTable(data.getConfigId(), moment);
+        if (table.isEmpty()) return new Rewards(List.of(), List.of(), 0, 0);
+
+        double boost = plugin.getBoostManager().getTotalMultiplier(player);
+        var customItems = plugin.getCustomItemManager();
+        var result = table.roll(random, boost, key -> customItems != null ? customItems.get(key) : null, plugin.getLogger());
+
+        int received = DropUtils.giveItems(result.items(), data.getLocation(), player, plugin);
+        long money = DropUtils.runCommands(result.commands(), player);
+        var ranCommands = result.commands().stream().map(c -> c.replace("%player%", player.getName())).toList();
+        return new Rewards(result.items(), ranCommands, received, money);
+    }
+
     private void handleDestruction(CrystalData data, Player killer) {
         data.setDestroyed(true);
 
-        var config = plugin.getConfig().getConfigurationSection("crystals." + data.getConfigId());
-        if (config == null) return;
+        var config = getCrystalConfig(data);
 
         // Track stats
         var stats = plugin.getStatsManager().getOrCreateStats(killer.getUniqueId());
         stats.addCrystalDestroyed(data.getConfigId());
         stats.updateLastSeen();
 
-        var deathDrops = loadDropItems(config.getConfigurationSection("death-drops"));
-        var boostedDeathDrops = applyBoostToDrops(deathDrops, killer);
-        int deathItemsReceived = DropUtils.processDrops(boostedDeathDrops, data.getLocation(), killer, plugin);
-
-        // Track items received from death drops
-        if (deathItemsReceived > 0) {
-            stats.addItemsReceived(deathItemsReceived);
-        }
-
-        var deathCommands = loadDropCommands(config.getConfigurationSection("death-commands"));
-        long deathMoneyEarned = DropUtils.executeCommands(deathCommands, killer);
-
-        // Track money earned from death commands
-        if (deathMoneyEarned > 0) {
-            stats.addMoneyEarned(deathMoneyEarned);
-        }
+        var death = rollRewards(data, "death", killer);
+        if (death.itemsReceived() > 0) stats.addItemsReceived(death.itemsReceived());
+        if (death.money() > 0) stats.addMoneyEarned(death.money());
 
         playDeathEffects(data, config);
 
-        String displayName = data.getOverrideName() != null ? data.getOverrideName() :
-                           config.getString("display-name", data.getConfigId());
-        String message = plugin.getConfig().getString("messages.crystal-destroyed", "&e%display_name% &ahas been destroyed!");
-        if (message != null && !message.isEmpty()) {
-            message = message.replace("%display_name%", colorize(displayName));
-            String prefix = plugin.getConfig().getString("messages.prefix", "");
-            killer.sendMessage(colorize(prefix + message));
-        }
+        plugin.getMessages().send(killer, "crystal-destroyed", "display_name", getDisplayName(data),
+                "id", data.getId(), "player", killer.getName());
 
-        var event = new MetinCrystalDestroyedEvent(data, killer, new ArrayList<>(deathDrops));
+        var event = new MetinCrystalDestroyedEvent(data, killer, death.items(), death.commands());
         Bukkit.getPluginManager().callEvent(event);
 
-        if (data.getEntity() != null && !data.getEntity().isDead()) {
-            entityToCrystal.remove(data.getEntity().getUniqueId());
-            data.getEntity().remove();
-        }
-        hologramManager.removeHologram(data);
+        despawnWorldEntities(data);
         removeBossBar(data.getId());
 
-        if (data.getType() == CrystalType.RESPAWN) {
+        if (data.getSpawnerId() != null) {
+            // Spawners create new crystals themselves: their crystals never respawn in place
+            crystals.remove(data.getId());
+            var spawners = plugin.getSpawnerManager();
+            if (spawners != null) spawners.onCrystalDestroyed(data, killer);
+            plugin.getLogger().info("Spawner crystal " + data.getId() + " destroyed");
+        } else if (data.getType() == CrystalType.RESPAWN) {
             var respawnSeconds = config.getInt("respawn-time", 300);
             data.setRespawnTime(System.currentTimeMillis() + (respawnSeconds * 1000L));
             plugin.getLogger().info("Crystal " + data.getId() + " will respawn in " + respawnSeconds + " seconds");
@@ -235,12 +417,16 @@ public class CrystalManager {
         var world = location.getWorld();
         if (world == null) return;
 
-        var particleStr = effectsSection.getString("particle", "EXPLOSION_HUGE");
-        try {
-            var particle = Particle.valueOf(particleStr);
-            world.spawnParticle(particle, location, 50, 1, 1, 1, 0.1);
-        } catch (IllegalArgumentException e) {
+        var particleStr = effectsSection.getString("particle", "EXPLOSION_EMITTER");
+        var particle = ParticleUtils.resolve(particleStr);
+        if (particle == null) {
             plugin.getLogger().warning("Invalid particle type: " + particleStr);
+        } else {
+            try {
+                world.spawnParticle(particle, location, 50, 1, 1, 1, 0.1);
+            } catch (IllegalArgumentException e) {
+                plugin.getLogger().warning("Particle " + particleStr + " needs extra data and cannot be used as a death effect");
+            }
         }
 
         var soundStr = effectsSection.getString("sound", "ENTITY_GENERIC_EXPLODE");
@@ -254,45 +440,11 @@ public class CrystalManager {
         }
     }
 
-    private List<DropItem> loadDropItems(ConfigurationSection section) {
-        if (section == null) return Collections.emptyList();
+    // ── Boss bars ───────────────────────────────────────────────
 
-        var drops = new ArrayList<DropItem>();
-        for (var key : section.getKeys(false)) {
-            var dropSection = section.getConfigurationSection(key);
-            if (dropSection == null) continue;
-
-            try {
-                var material = org.bukkit.Material.valueOf(dropSection.getString("item", "STONE"));
-                var amount = dropSection.getInt("amount", 1);
-                var chance = dropSection.getDouble("chance", 100.0);
-                var name = dropSection.getString("name");
-                var lore = dropSection.getStringList("lore");
-
-                drops.add(new DropItem(material, amount, chance, name, lore));
-            } catch (IllegalArgumentException e) {
-                plugin.getLogger().warning("Invalid drop item: " + key);
-            }
-        }
-        return drops;
-    }
-
-    private List<DropCommand> loadDropCommands(ConfigurationSection section) {
-        if (section == null) return Collections.emptyList();
-
-        var commands = new ArrayList<DropCommand>();
-        for (var key : section.getKeys(false)) {
-            var cmdSection = section.getConfigurationSection(key);
-            if (cmdSection == null) continue;
-
-            var command = cmdSection.getString("command");
-            var chance = cmdSection.getDouble("chance", 100.0);
-
-            if (command != null) {
-                commands.add(new DropCommand(command, chance));
-            }
-        }
-        return commands;
+    private String bossBarTitle(CrystalData data) {
+        return plugin.getMessages().legacy("bossbar-crystal", "display_name", getDisplayName(data),
+                "hp", data.getCurrentHp(), "max_hp", data.getMaxHp(), "id", data.getId());
     }
 
     private void createBossBar(CrystalData data) {
@@ -301,13 +453,7 @@ public class CrystalManager {
 
         removeBossBar(data.getId());
 
-        String displayName = data.getOverrideName() != null ? data.getOverrideName() :
-                           config.getString("display-name", data.getConfigId());
-        var bossBar = Bukkit.createBossBar(
-                colorize(displayName + " &7- &c" + data.getCurrentHp() + "&7/&c" + data.getMaxHp()),
-                BarColor.RED,
-                BarStyle.SOLID
-        );
+        var bossBar = Bukkit.createBossBar(bossBarTitle(data), BarColor.RED, BarStyle.SOLID);
         bossBar.setProgress(1.0);
         bossBars.put(data.getId(), bossBar);
     }
@@ -316,12 +462,7 @@ public class CrystalManager {
         var bossBar = bossBars.get(data.getId());
         if (bossBar == null) return;
 
-        var config = plugin.getConfig().getConfigurationSection("crystals." + data.getConfigId());
-        if (config == null) return;
-
-        String displayName = data.getOverrideName() != null ? data.getOverrideName() :
-                           config.getString("display-name", data.getConfigId());
-        bossBar.setTitle(colorize(displayName + " &7- &c" + data.getCurrentHp() + "&7/&c" + data.getMaxHp()));
+        bossBar.setTitle(bossBarTitle(data));
         bossBar.setProgress(Math.max(0.0, Math.min(1.0, (double) data.getCurrentHp() / data.getMaxHp())));
     }
 
@@ -332,8 +473,40 @@ public class CrystalManager {
         }
     }
 
+    /** Re-applies config.yml to existing crystals and restarts the tasks with the new intervals (/metin reload). */
+    public void reload() {
+        missingConfigWarned.clear();
+        clearDropCache();
+        startUpdateTask();
+        startAutoSave();
+
+        boolean bossBarsEnabled = plugin.getConfig().getBoolean("settings.bossbar-enabled", true);
+        for (var data : crystals.values()) {
+            var config = plugin.getConfig().getConfigurationSection("crystals." + data.getConfigId());
+            if (config != null) {
+                data.setMaxHp(config.getInt("max-hp", data.getMaxHp()));
+            }
+
+            removeBossBar(data.getId());
+            hologramManager.removeHologram(data);
+            if (!data.isDestroyed()) {
+                if (bossBarsEnabled) {
+                    createBossBar(data);
+                    updateBossBar(data);
+                }
+                // Countdown holograms of destroyed crystals are recreated by the update task
+                if (getLoadedWorld(data) != null) {
+                    hologramManager.createHologram(data);
+                }
+            }
+        }
+    }
+
     public void startUpdateTask() {
-        var interval = plugin.getConfig().getLong("settings.hologram-update-interval", 20);
+        if (updateTask != null) {
+            updateTask.cancel();
+        }
+        var interval = Math.max(1, plugin.getConfig().getLong("settings.hologram-update-interval", 20));
         updateTask = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
             var now = System.currentTimeMillis();
 
@@ -345,6 +518,10 @@ public class CrystalManager {
                         hologramManager.updateRespawnHologram(data);
                     }
                 } else if (!data.isDestroyed()) {
+                    // Self-heal: entity removed by something that bypasses damage events (/kill, other plugins)
+                    if (!hasLiveEntity(data) && getLoadedWorld(data) != null) {
+                        spawnWorldEntities(data);
+                    }
                     hologramManager.updateHologram(data);
                     updateBossBarPlayers(data);
                 }
@@ -357,9 +534,9 @@ public class CrystalManager {
         if (bossBar == null) return;
 
         var range = plugin.getConfig().getDouble("settings.bossbar-range", 30.0);
-        var location = data.getLocation();
-        var world = location.getWorld();
+        var world = getLoadedWorld(data);
         if (world == null) return;
+        var location = data.getLocation();
 
         var currentPlayers = new HashSet<>(bossBar.getPlayers());
 
@@ -390,8 +567,16 @@ public class CrystalManager {
     }
 
     public void startAutoSave() {
-        var interval = plugin.getConfig().getLong("settings.save-interval", 300) * 20L;
-        saveTask = Bukkit.getScheduler().runTaskTimer(plugin, dataHandler::saveData, interval, interval);
+        if (saveTask != null) {
+            saveTask.cancel();
+        }
+        var interval = Math.max(1, plugin.getConfig().getLong("settings.save-interval", 300)) * 20L;
+        saveTask = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+            dataHandler.saveData();
+            // stats.yml used to be written only on shutdown, so a crash lost the whole session
+            plugin.getStatsManager().saveAllStats();
+            plugin.getBoostManager().saveBoosts();
+        }, interval, interval);
     }
 
     public void shutdown() {
@@ -408,15 +593,14 @@ public class CrystalManager {
         bossBars.clear();
 
         for (var data : crystals.values()) {
-            if (data.getEntity() != null && !data.getEntity().isDead()) {
-                data.getEntity().remove();
-            }
-            hologramManager.removeHologram(data);
+            despawnWorldEntities(data);
         }
     }
 
+    // ── Lookup ──────────────────────────────────────────────────
+
     public CrystalData getCrystalById(String id) {
-        return crystals.get(id);
+        return id == null ? null : crystals.get(id.toLowerCase(Locale.ROOT));
     }
 
     public CrystalData getCrystalByEntity(UUID entityUuid) {
@@ -428,32 +612,70 @@ public class CrystalManager {
         return crystals.values();
     }
 
-    public void manualRespawn(String id) {
+    /** Crystals sorted by ID in natural order (common-2 before common-10). */
+    public List<CrystalData> getSortedCrystals() {
+        var list = new ArrayList<>(crystals.values());
+        list.sort(Comparator.comparing(CrystalData::getId, CrystalManager::compareIds));
+        return list;
+    }
+
+    static int compareIds(String a, String b) {
+        int dashA = a.lastIndexOf('-');
+        int dashB = b.lastIndexOf('-');
+        if (dashA > 0 && dashB > 0 && a.substring(0, dashA).equals(b.substring(0, dashB))) {
+            try {
+                return Integer.compare(Integer.parseInt(a.substring(dashA + 1)), Integer.parseInt(b.substring(dashB + 1)));
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        return a.compareTo(b);
+    }
+
+    /** Nearest crystal in the same world within range, or null. */
+    public CrystalData getNearest(Location location, double range) {
+        if (location.getWorld() == null) return null;
+        var worldName = location.getWorld().getName();
+        CrystalData best = null;
+        double bestDistance = range * range;
+        for (var data : crystals.values()) {
+            if (!worldName.equals(data.getWorldName())) continue;
+            double d = data.getLocation().distanceSquared(location);
+            if (d <= bestDistance) {
+                best = data;
+                bestDistance = d;
+            }
+        }
+        return best;
+    }
+
+    /** Number of live (not destroyed) crystals created by the spawner; null = all spawners. */
+    public int countSpawnerCrystals(String spawnerId) {
+        int count = 0;
+        for (var data : crystals.values()) {
+            if (data.getSpawnerId() == null || data.isDestroyed()) continue;
+            if (spawnerId == null || spawnerId.equals(data.getSpawnerId())) count++;
+        }
+        return count;
+    }
+
+    /**
+     * Marks a crystal as destroyed, cleaning up its entity, hologram and bossbar.
+     * Used by DataHandler when loading destroyed crystals from data.yml.
+     */
+    public void markCrystalDestroyed(String id) {
         var data = crystals.get(id);
+        if (data == null) return;
+
+        data.setDestroyed(true);
+
+        despawnWorldEntities(data);
+        removeBossBar(id);
+    }
+
+    public void manualRespawn(String id) {
+        var data = getCrystalById(id);
         if (data != null && data.isDestroyed()) {
             respawnCrystal(data);
         }
-    }
-
-    private List<DropItem> applyBoostToDrops(List<DropItem> drops, Player player) {
-        if (drops == null || drops.isEmpty()) return drops;
-
-        double multiplier = plugin.getBoostManager().getTotalMultiplier(player);
-        if (multiplier <= 1.0) return drops;
-
-        // Multiply chances by the boost multiplier
-        return drops.stream()
-                .map(drop -> new DropItem(
-                        drop.material(),
-                        drop.amount(),
-                        Math.min(100.0, drop.chance() * multiplier), // Cap at 100%
-                        drop.name(),
-                        drop.lore()
-                ))
-                .toList();
-    }
-
-    private String colorize(String text) {
-        return text.replace('&', '§');
     }
 }

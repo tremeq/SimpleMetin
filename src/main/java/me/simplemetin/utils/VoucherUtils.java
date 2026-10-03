@@ -1,5 +1,7 @@
 package me.simplemetin.utils;
 
+import me.simplemetin.SimpleMetin;
+import me.simplemetin.managers.BoostManager;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.enchantments.Enchantment;
@@ -13,7 +15,7 @@ import java.util.List;
 
 public class VoucherUtils {
 
-    public static ItemStack createBoostVoucher(Plugin plugin, double multiplier, long durationSeconds) {
+    public static ItemStack createBoostVoucher(SimpleMetin plugin, double multiplier, long durationSeconds) {
         var config = plugin.getConfig();
         var materialStr = config.getString("boosts.personal.voucher.material", "PAPER");
         var material = Material.getMaterial(materialStr);
@@ -23,20 +25,14 @@ public class VoucherUtils {
         var meta = item.getItemMeta();
         if (meta == null) return item;
 
-        // Name
-        var name = config.getString("boosts.personal.voucher.name", "&e&l✦ DROP BOOST VOUCHER ✦");
-        name = colorize(name);
-        meta.setDisplayName(name);
-
-        // Lore
-        var loreTemplate = config.getStringList("boosts.personal.voucher.lore");
-        var lore = loreTemplate.stream()
-                .map(line -> line
-                        .replace("%multiplier%", String.format("%.1f", multiplier))
-                        .replace("%duration%", formatDuration(durationSeconds)))
-                .map(VoucherUtils::colorize)
-                .toList();
-        meta.setLore(lore);
+        // Name and lore come from the messages file (voucher-name, voucher-lore)
+        var messages = plugin.getMessages();
+        var multiplierText = BoostManager.formatMultiplier(multiplier);
+        var durationText = TextUtils.formatDuration(durationSeconds);
+        meta.displayName(TextUtils.parseItemText(messages.raw("voucher-name", "multiplier", multiplierText, "duration", durationText)));
+        meta.lore(messages.rawList("voucher-lore", "multiplier", multiplierText, "duration", durationText).stream()
+                .map(TextUtils::parseItemText)
+                .toList());
 
         // Glow effect
         if (config.getBoolean("boosts.personal.voucher.glow", true)) {
@@ -85,21 +81,5 @@ public class VoucherUtils {
         return meta.getPersistentDataContainer().getOrDefault(key, PersistentDataType.LONG, 0L);
     }
 
-    private static String formatDuration(long seconds) {
-        long hours = seconds / 3600;
-        long minutes = (seconds % 3600) / 60;
-        long secs = seconds % 60;
 
-        if (hours > 0) {
-            return String.format("%dh %dm", hours, minutes);
-        } else if (minutes > 0) {
-            return String.format("%dm", minutes);
-        } else {
-            return String.format("%ds", secs);
-        }
-    }
-
-    private static String colorize(String text) {
-        return text.replace('&', '§');
-    }
 }

@@ -2,6 +2,7 @@ package me.simplemetin.placeholder;
 
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import me.simplemetin.SimpleMetin;
+import me.simplemetin.managers.BoostManager;
 import me.simplemetin.models.PlayerStats;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
@@ -38,13 +39,13 @@ public class MetinPlaceholder extends PlaceholderExpansion {
 
     @Override
     public String onRequest(OfflinePlayer player, @NotNull String params) {
-        if (player == null) {
-            return "";
-        }
-
-        // Handle TOP placeholders first (don't require player stats)
+        // TOP placeholders don't need a player (e.g. global holograms/scoreboards)
         if (params.contains("_top_")) {
             return handleTopPlaceholder(params);
+        }
+
+        if (player == null) {
+            return "";
         }
 
         // Handle boost placeholders (don't require player stats)
@@ -96,7 +97,7 @@ public class MetinPlaceholder extends PlaceholderExpansion {
             case "boost_multiplier":
                 if (!player.isOnline()) return "1.0";
                 double mult = plugin.getBoostManager().getTotalMultiplier(player.getPlayer());
-                return String.format("%.1f", mult);
+                return BoostManager.formatMultiplier(mult);
 
             case "boost_active":
                 if (!player.isOnline()) return "false";
@@ -113,11 +114,11 @@ public class MetinPlaceholder extends PlaceholderExpansion {
 
             case "personal_boost_multiplier":
                 var personalBoost = plugin.getBoostManager().getPersonalBoost(player.getUniqueId());
-                return personalBoost != null ? String.format("%.1f", personalBoost.multiplier) : "1.0";
+                return personalBoost != null ? BoostManager.formatMultiplier(personalBoost.multiplier) : "1.0";
 
             case "global_boost_multiplier":
                 var globalBoost = plugin.getBoostManager().getGlobalBoost();
-                return globalBoost != null ? String.format("%.1f", globalBoost.multiplier) : "1.0";
+                return globalBoost != null ? BoostManager.formatMultiplier(globalBoost.multiplier) : "1.0";
 
             default:
                 return "";
@@ -141,15 +142,12 @@ public class MetinPlaceholder extends PlaceholderExpansion {
         } catch (NumberFormatException e) {
             return "";
         }
+        if (position < 1) {
+            return isName ? "-" : "0";
+        }
 
-        // Get appropriate top list based on stat type
-        List<PlayerStats> topPlayers = switch (statType) {
-            case "destroyed" -> plugin.getStatsManager().getTopCrystalsDestroyed(position);
-            case "damage" -> plugin.getStatsManager().getTopDamage(position);
-            case "items" -> plugin.getStatsManager().getTopItemsReceived(position);
-            case "money" -> plugin.getStatsManager().getTopMoneyEarned(position);
-            default -> List.of();
-        };
+        // Cached sorted list: sorting all players on every request was expensive with scoreboards
+        List<PlayerStats> topPlayers = plugin.getStatsManager().getCachedTop(statType);
 
         if (position < 1 || position > topPlayers.size()) {
             return isName ? "-" : "0";

@@ -1,6 +1,8 @@
 package me.simplemetin.listeners;
 
 import me.simplemetin.SimpleMetin;
+import me.simplemetin.managers.BoostManager;
+import me.simplemetin.utils.TextUtils;
 import me.simplemetin.utils.VoucherUtils;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
@@ -33,10 +35,7 @@ public class BoostVoucherListener implements Listener {
 
         // Check if already has boost
         if (plugin.getBoostManager().getPersonalBoost(player.getUniqueId()) != null) {
-            String message = plugin.getConfig().getString("messages.boost-already-active", "&cYou already have an active boost!");
-            if (message != null && !message.isEmpty()) {
-                player.sendMessage(colorize(message));
-            }
+            plugin.getMessages().send(player, "boost-already-active");
             player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
             return;
         }
@@ -49,13 +48,8 @@ public class BoostVoucherListener implements Listener {
         plugin.getBoostManager().activatePersonalBoost(player, multiplier, duration);
 
         // Send message
-        String message = plugin.getConfig().getString("messages.boost-activated", "&a&lBOOST ACTIVATED!");
-        if (message != null && !message.isEmpty()) {
-            message = message
-                    .replace("%multiplier%", String.format("%.1f", multiplier))
-                    .replace("%duration%", formatDuration(duration));
-            player.sendMessage(colorize(plugin.getConfig().getString("messages.prefix", "") + message));
-        }
+        plugin.getMessages().send(player, "boost-activated",
+                "multiplier", BoostManager.formatMultiplier(multiplier), "duration", TextUtils.formatDuration(duration));
 
         // Play sound
         player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.5f);
@@ -64,20 +58,5 @@ public class BoostVoucherListener implements Listener {
         item.setAmount(item.getAmount() - 1);
     }
 
-    private String formatDuration(long seconds) {
-        long hours = seconds / 3600;
-        long minutes = (seconds % 3600) / 60;
 
-        if (hours > 0) {
-            return String.format("%dh %dm", hours, minutes);
-        } else if (minutes > 0) {
-            return String.format("%dm", minutes);
-        } else {
-            return String.format("%ds", seconds);
-        }
-    }
-
-    private String colorize(String text) {
-        return text.replace('&', '§');
-    }
 }

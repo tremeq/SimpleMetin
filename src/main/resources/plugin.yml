@@ -1,5 +1,5 @@
 name: SimpleMetin
-version: 1.0.0
+version: ${project.version}
 main: me.simplemetin.SimpleMetin
 api-version: '1.21'
 author: TremeQu
@@ -8,9 +8,74 @@ softdepend: [PlaceholderAPI]
 commands:
   metin:
     description: Main SimpleMetin command
-    usage: /metin <spawn|remove|list|respawn|reload|stats|givevoucher|boost|updateleaderboard>
-    permission: simplemetin.admin
+    usage: /metin <spawn|remove|list|info|tp|respawn|reload|stats|givevoucher|boost|updateleaderboard|spawner|item|adddrop>
+  metinadmin:
+    description: Player damage stats management
+    usage: /metinadmin <add|set|get|reset>
+    permission: simplemetin.strength
+    aliases: [ma]
 permissions:
   simplemetin.admin:
     description: Access to all SimpleMetin commands
+    default: op
+    children:
+      simplemetin.stats: true
+      simplemetin.stats.others: true
+      simplemetin.spawn: true
+      simplemetin.remove: true
+      simplemetin.list: true
+      simplemetin.info: true
+      simplemetin.tp: true
+      simplemetin.respawn: true
+      simplemetin.reload: true
+      simplemetin.boost: true
+      simplemetin.voucher: true
+      simplemetin.leaderboard: true
+      simplemetin.spawner: true
+      simplemetin.items: true
+      simplemetin.strength: true
+  simplemetin.stats:
+    description: /metin stats - own statistics
+    default: true
+  simplemetin.stats.others:
+    description: /metin stats <player> - statistics of other players
+    default: op
+  simplemetin.spawn:
+    description: /metin spawn
+    default: op
+  simplemetin.remove:
+    description: /metin remove
+    default: op
+  simplemetin.list:
+    description: /metin list
+    default: op
+  simplemetin.info:
+    description: /metin info
+    default: op
+  simplemetin.tp:
+    description: /metin tp
+    default: op
+  simplemetin.respawn:
+    description: /metin respawn
+    default: op
+  simplemetin.reload:
+    description: /metin reload
+    default: op
+  simplemetin.boost:
+    description: /metin boost
+    default: op
+  simplemetin.voucher:
+    description: /metin givevoucher
+    default: op
+  simplemetin.leaderboard:
+    description: /metin updateleaderboard
+    default: op
+  simplemetin.spawner:
+    description: /metin spawner - automatic spawns
+    default: op
+  simplemetin.items:
+    description: /metin item, /metin adddrop - custom drop items
+    default: op
+  simplemetin.strength:
+    description: /ma - player strength management
     default: op

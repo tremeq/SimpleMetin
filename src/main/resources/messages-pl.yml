@@ -1,0 +1,163 @@
+# ============================================
+# SimpleMetin - wiadomosci po polsku
+# ============================================
+# Wybor pliku w config.yml:  language: pl
+#
+# Formatowanie: kody & (&e, &l, &#ff8800) oraz MiniMessage (<gradient:gold:yellow>, <#ff8800>,
+# <hover:show_text:'...'>, <click:run_command:'/...'>) dzialaja razem, nawet w jednej linii.
+# Ustaw wiadomosc na "" aby ja wylaczyc. Brakujace klucze sa dopisywane automatycznie przy starcie.
+# Placeholdery maja postac %nazwa% i sa wypisane obok kazdej wiadomosci.
+
+prefix: "&8[&eSimpleMetin&8]&r "
+
+# ── Ogolne ──────────────────────────────────────────────────
+no-permission: "&cNie masz uprawnien do tej komendy."
+player-only: "&cTej komendy moze uzyc tylko gracz."
+player-not-found: "&cNie znaleziono gracza &e%player%&c."         # %player%
+player-never-joined: "&cGracz &e%player% &cnie zostal znaleziony (nie gral jeszcze na serwerze)."  # %player%
+invalid-number: "&cNieprawidlowa liczba: &e%value%"               # %value%
+usage: "&cUzycie: &e%usage%"                                      # %usage%
+reloaded: "&aKonfiguracja przeladowana."
+reload-pending-loaded: "&aZaladowano &e%count% &awczesniej niedostepnych krysztalow."  # %count%
+
+# ── Krysztaly ───────────────────────────────────────────────
+spawned: "&aPostawiono krysztal &e%id%&a w Twojej lokalizacji."   # %id% %type%
+spawn-unknown-type: "&cTyp krysztalu &e%type% &cnie istnieje w config.yml."  # %type%
+spawn-invalid-id: "&cNieprawidlowe ID &e%id%&c: uzyj 1-32 znakow a-z, 0-9, - lub _."  # %id%
+spawn-id-taken: "&cID &e%id% &cjest juz zajete."                  # %id%
+removed: "&cUsunieto krysztal &e%id%"                              # %id%
+not-found: "&cNie znaleziono krysztalu &e%id%"                     # %id%
+no-crystal-nearby: "&cBrak krysztalu w promieniu &e%range% &cblokow."  # %range%
+respawned: "&aRecznie odrodzono krysztal &e%id%"                   # %id%
+not-destroyed: "&cKrysztal &e%id% &cnie jest zniszczony."           # %id%
+teleported: "&aPrzeteleportowano do krysztalu &e%id%&a."            # %id%
+
+list-empty: "&7Brak krysztalow."
+list-header: "&e&lKrysztaly &7(%count%):"                          # %count%
+# %id% %status% %type% %hp% %max_hp% %world% %x% %y% %z% %spawner%
+list-entry: "&7- &e%id% %status% &7Typ: &f%type% &7HP: &c%hp%&7/&c%max_hp% &8(%world% %x% %y% %z%)"
+list-entry-pending: "&7- &e%id% %status% &7swiat lub typ krysztalu niedostepny"  # %id% %status%
+status-active: "&a[AKTYWNY]"
+status-destroyed: "&c[ZNISZCZONY]"
+status-pending: "&6[OCZEKUJE]"
+
+# /metin info - %id% %type% %display_name% %status% %hp% %max_hp% %world% %x% %y% %z% %respawn% %spawner% %expires%
+info:
+  - "&e&lKrysztal &f%id% %status%"
+  - "&7Typ: &f%type% &7(%display_name%&7)"
+  - "&7HP: &c%hp%&7/&c%max_hp%"
+  - "&7Pozycja: &f%world% %x% %y% %z%"
+  - "&7Respawn za: &f%respawn% &7| Spawner: &f%spawner% &7| Zniknie za: &f%expires%"
+none: "-"
+
+crystal-destroyed: "&e%display_name% &azostal zniszczony!"        # %display_name% %id% %player%
+crystal-hit: "&7HP krysztalu: &c%hp%&7/&c%max_hp%"                  # %hp% %max_hp% %damage% %display_name%
+respawn-countdown: "&7Odrodzi sie za: &e%time%s"                    # %time%
+hit-cooldown: "&cMusisz odczekac &e%time%s &cprzed kolejnym atakiem!"  # %time%
+inventory-full: "&eTwoj ekwipunek jest pelny! Czesc przedmiotow wypadla na ziemie."
+bossbar-crystal: "%display_name% &7- &c%hp%&7/&c%max_hp%"          # %display_name% %hp% %max_hp% %id%
+
+# ── Statystyki (/metin stats) ───────────────────────────────
+# %player% %destroyed% %damage% %items% %money% %strength% %rank_destroyed% %rank_damage% %rank_items% %rank_money%
+stats:
+  - "&e&lStatystyki gracza %player%:"
+  - "&7Zniszczone krysztaly: &e%destroyed% &8(#%rank_destroyed%)"
+  - "&7Zadane obrazenia: &e%damage% &8(#%rank_damage%)"
+  - "&7Otrzymane przedmioty: &e%items% &8(#%rank_items%)"
+  - "&7Zarobione pieniadze: &e$%money% &8(#%rank_money%)"
+  - "&7Sila: &e%strength%"
+stats-types-header: "&7Zniszczone wg typu:"
+stats-type-line: "&7  - &f%type%&7: &e%count%"                     # %type% %count%
+stats-none: "&7%player% nie zaatakowal jeszcze zadnego krysztalu."  # %player%
+
+# ── Boosty ──────────────────────────────────────────────────
+boost-activated: "&a&lBOOST AKTYWNY! &e%multiplier%x &aszansy na drop przez &e%duration%"  # %multiplier% %duration%
+boost-expired: "&c&lBOOST WYGASL! &7Twoj boost dropu sie skonczyl."
+global-boost-activated: "&6&l[SERWER] &e%multiplier%x &6Globalny boost dropu aktywny przez &e%duration%&6!"  # %multiplier% %duration%
+global-boost-expired: "&c&l[SERWER] &7Globalny boost dropu wygasl."
+boost-already-active: "&cMasz juz aktywny boost!"
+boost-player-activated: "&aAktywowano boost &e%multiplier%x &adla &e%player%"  # %multiplier% %player% %duration%
+boost-player-replaced: "&aAktywowano boost &e%multiplier%x &adla &e%player% &7(zastapil poprzedni boost)"
+boost-invalid-type: "&cNieprawidlowy typ! Uzyj 'global' lub 'player'"
+bossbar-boost-personal: "&e&l⚡ BOOST OSOBISTY &e%multiplier%x &7- &e%time%"  # %multiplier% %time%
+bossbar-boost-global: "&6&l⭐ BOOST GLOBALNY &6%multiplier%x &7- &6%time%"     # %multiplier% %time%
+
+# Przedmiot vouchera - %multiplier% %duration%
+voucher-name: "&e&l✦ VOUCHER BOOSTA DROPU ✦"
+voucher-lore:
+  - "&7Kliknij PPM, aby aktywowac"
+  - "&7Boost: &e%multiplier%x"
+  - "&7Czas: &e%duration%"
+  - ""
+  - "&6&lBOOST OSOBISTY"
+voucher-given: "&aDano voucher graczowi %player% (&e%multiplier%x &aprzez &e%duration%&a)"  # %player% %multiplier% %duration%
+voucher-received: "&aOtrzymales voucher boosta!"
+
+# ── Rankingi ────────────────────────────────────────────────
+leaderboard-updating: "&eAktualizowanie plikow statystyk..."
+leaderboard-updated: "&aStatystyki zaktualizowane! &7Zobacz &eleaderboards.yml &7i &estatistics.yml&7."
+
+# ── Sila graczy (/ma) ───────────────────────────────────────
+strength-added: "&aDodano &e%value% &agraczowi &e%player%&a. Nowa sila: &e%strength%"  # %value% %player% %strength%
+strength-added-capped: "&aDodano &e%value% &agraczowi &e%player%&a. Nowa sila: &e%strength% &7(minimum %min%)"
+strength-set: "&aUstawiono sile &e%strength% &adla &e%player%"     # %player% %strength%
+strength-get: "&7Gracz &e%player% &7- sila: &e%strength%"          # %player% %strength%
+strength-reset: "&aZresetowano sile gracza &e%player% &ado wartosci domyslnej (%strength%)"  # %player% %strength%
+strength-too-low: "&cSila musi wynosic co najmniej &e%min%&c."     # %min%
+strength-help:
+  - "&e&lKomendy MetinAdmin:"
+  - "&7/ma add <gracz> <wartosc> &f- Dodaj do sily gracza"
+  - "&7/ma set <gracz> <wartosc> &f- Ustaw sile gracza"
+  - "&7/ma get <gracz> &f- Sprawdz sile gracza"
+  - "&7/ma reset <gracz> &f- Zresetuj do domyslnej (%default%)"
+
+# ── Automatyczne spawny ─────────────────────────────────────
+# %spawner% %display_name% %type% %id% %world% %x% %y% %z% %time% %player%
+spawner-warning: "&6&l[METIN] &e%display_name% &epojawi sie za &f%time%&e!"
+spawner-spawned: "&6&l[METIN] &r%display_name% &epojawil sie na &f%x% %y% %z% &7(%world%)&e!"
+spawner-despawned: "&6&l[METIN] &7%display_name% &7na &f%x% %y% %z% &7zniknal."
+spawner-destroyed: "&6&l[METIN] &e%player% &azniszczyl %display_name%&a!"
+spawner-list-header: "&e&lSpawnery:"
+spawner-list-entry: "&7- &e%spawner% %state% &7[%mode%] &7zywe: &a%alive%&7/&a%max% &7nastepny: &e%next%"  # %spawner% %state% %mode% %alive% %max% %next%
+spawner-state-enabled: "&a[WL]"
+spawner-state-disabled: "&c[WYL]"
+spawner-not-found: "&cNie znaleziono spawnera &e%spawner%&c."
+spawner-forced: "&aPostawiono krysztal &e%id% &aze spawnera &e%spawner%&a."
+spawner-force-searching: "&eSzukam miejsca na krysztal ze spawnera &f%spawner%&e..."
+spawner-force-failed: "&cSpawner &e%spawner% &cnie znalazl odpowiedniego miejsca."
+spawner-point-added: "&aDodano punkt &e#%index% &ado spawnera &e%spawner%&a."  # %index% %spawner%
+spawner-point-removed: "&aUsunieto punkt &e#%index% &aze spawnera &e%spawner%&a."
+spawner-point-invalid: "&cSpawner &e%spawner% &cnie ma punktu &e#%index%&c."
+spawner-point-header: "&e&lPunkty spawnera %spawner%:"
+spawner-point-entry: "&7#%index% &f%world% %x% %y% %z%"
+spawner-point-none: "&7Spawner %spawner% nie ma punktow."
+
+# ── Wlasne przedmioty i dropy ───────────────────────────────
+item-hand-empty: "&cTrzymaj przedmiot w glownej rece."
+item-saved: "&aZapisano trzymany przedmiot jako &e%key%&a. Uzyj &fcustom-item: %key% &aw dropach."  # %key%
+item-not-found: "&cNie znaleziono przedmiotu &e%key%&c."
+item-removed: "&aUsunieto przedmiot &e%key%&a."
+item-given: "&aDano &e%amount%x %key% &agraczowi &e%player%&a."     # %amount% %key% %player%
+items-list-header: "&e&lWlasne przedmioty &7(%count%):"
+items-list-entry: "&7- &e%key% &7(%material%)"                     # %key% %material%
+items-list-empty: "&7Brak zapisanych przedmiotow."
+drop-added: "&aDodano drop &e%key% &ado &e%type% &7(%section%, %chance%%, ilosc %amount%)"  # %key% %type% %section% %chance% %amount%
+drop-invalid-section: "&cSekcja musi byc &ehit &club &edeath&c."
+
+# ── Pomoc (/metin) - kazda linia widoczna tylko z odpowiednim uprawnieniem ──
+help-header: "&e&lKomendy SimpleMetin:"
+help-spawn: "&7/metin spawn <typ> [id|auto] [nazwa] &f- Postaw krysztal"
+help-remove: "&7/metin remove <id|nearest> &f- Usun krysztal"
+help-list: "&7/metin list &f- Lista krysztalow"
+help-info: "&7/metin info [id|nearest] &f- Szczegoly krysztalu"
+help-tp: "&7/metin tp <id> &f- Teleport do krysztalu"
+help-respawn: "&7/metin respawn <id|nearest> &f- Reczne odrodzenie krysztalu"
+help-reload: "&7/metin reload &f- Przeladuj konfiguracje i wiadomosci"
+help-stats: "&7/metin stats &f- Twoje statystyki"
+help-stats-others: "&7/metin stats <gracz> &f- Statystyki innego gracza"
+help-givevoucher: "&7/metin givevoucher <gracz> <mnoznik> <czas> &f- Daj voucher boosta"
+help-boost: "&7/metin boost <global|player> <mnoznik> <czas> [gracz] &f- Aktywuj boost"
+help-leaderboard: "&7/metin updateleaderboard &f- Odswiez leaderboards.yml"
+help-spawner: "&7/metin spawner <list|spawn|point> ... &f- Automatyczne spawny"
+help-items: "&7/metin item <save|give|remove|list> ... &f- Wlasne przedmioty do dropow"
+help-adddrop: "&7/metin adddrop <typ> <hit|death> <szansa> [ilosc] [klucz] &f- Dodaj trzymany przedmiot jako drop"

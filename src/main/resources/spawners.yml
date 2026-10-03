@@ -1,0 +1,78 @@
+# ============================================
+# SimpleMetin - automatic spawns
+# ============================================
+# Global switch and limits: config.yml -> auto-spawn (enabled, max-alive-total, min-players-online)
+#
+# Commands (permission simplemetin.spawner):
+#   /metin spawner list                      status of all spawners
+#   /metin spawner spawn <spawner>           spawn one crystal now (ignores the timer and limits)
+#   /metin spawner point add <spawner>       add your position as a point (mode: points)
+#   /metin spawner point remove <spawner> <#>
+#   /metin spawner point list <spawner>
+#
+# Each spawner:
+#   enabled        true/false
+#   mode           random = random safe place in "area", points = one of the free "points"
+#   world          world name (random mode)
+#   area           shape: circle (center-x, center-z, radius) or rectangle (min-x, min-z, max-x, max-z)
+#                  min-y / max-y limit the surface height (does not search below the Nether roof)
+#   avoid-liquids  never spawn on water/lava (random mode)
+#   min-distance   minimum distance in blocks from other metins
+#   types          crystal types from config.yml with weights (80 + 20 = 80% / 20%)
+#   interval       seconds between spawn attempts, number or range "600-900"
+#   max-alive      how many crystals of this spawner may exist at once
+#   lifetime       seconds since spawn until the crystal vanishes, even if damaged (0 = never)
+#   spawn-on-start first attempt right after server start instead of after "interval"
+#   announce       spawn / despawn / destroy: true|false - chat announcements (texts in messages-*.yml)
+#                  warning: seconds before the spawn to announce it (0 = off)
+#                  range:   0 = whole server, > 0 = only players within this many blocks of the spawn
+#                  sound:   sound played to the receivers on spawn ("" = none)
+# Crystals from spawners never respawn in place: the spawner places new ones.
+
+spawners:
+  wilderness:
+    enabled: false  # set the area first, then enable
+    mode: random
+    world: world
+    area:
+      shape: circle
+      center-x: 0
+      center-z: 0
+      radius: 250
+      min-y: -64
+      max-y: 320
+    avoid-liquids: true
+    min-distance: 32
+    types:
+      metin_common: 80
+      metin_rare: 20
+    interval: "600-900"
+    max-alive: 3
+    lifetime: 1800
+    spawn-on-start: false
+    announce:
+      spawn: true
+      despawn: true
+      destroy: true
+      warning: 60
+      range: 0
+      sound: ENTITY_ENDER_DRAGON_GROWL
+
+  arena:
+    enabled: false  # add points with /metin spawner point add arena, then enable
+    mode: points
+    points: []
+    min-distance: 0
+    types:
+      metin_rare: 1
+    interval: 1800
+    max-alive: 1
+    lifetime: 900
+    spawn-on-start: false
+    announce:
+      spawn: true
+      despawn: true
+      destroy: true
+      warning: 0
+      range: 0
+      sound: ""

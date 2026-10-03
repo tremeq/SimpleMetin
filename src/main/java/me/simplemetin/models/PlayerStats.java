@@ -3,15 +3,20 @@ package me.simplemetin.models;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Written on the main thread, read asynchronously by the leaderboard task:
+ * fields are volatile and the per-type map is concurrent so copying it can't throw.
+ */
 public class PlayerStats {
     private final UUID playerUuid;
-    private int crystalsDestroyed;
-    private long totalDamageDealt;
-    private int itemsReceived;
-    private long moneyEarned;
+    private volatile int crystalsDestroyed;
+    private volatile long totalDamageDealt;
+    private volatile int itemsReceived;
+    private volatile long moneyEarned;
     private final Map<String, Integer> crystalTypeDestroyed;
-    private long lastSeen;
+    private volatile long lastSeen;
 
     public PlayerStats(UUID playerUuid) {
         this.playerUuid = playerUuid;
@@ -19,7 +24,7 @@ public class PlayerStats {
         this.totalDamageDealt = 0;
         this.itemsReceived = 0;
         this.moneyEarned = 0;
-        this.crystalTypeDestroyed = new HashMap<>();
+        this.crystalTypeDestroyed = new ConcurrentHashMap<>();
         this.lastSeen = System.currentTimeMillis();
     }
 
@@ -33,8 +38,7 @@ public class PlayerStats {
 
     public void addCrystalDestroyed(String crystalType) {
         this.crystalsDestroyed++;
-        this.crystalTypeDestroyed.put(crystalType,
-            this.crystalTypeDestroyed.getOrDefault(crystalType, 0) + 1);
+        this.crystalTypeDestroyed.merge(crystalType, 1, Integer::sum);
     }
 
     public long getTotalDamageDealt() {

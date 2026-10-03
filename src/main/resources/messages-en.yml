@@ -1,0 +1,163 @@
+# ============================================
+# SimpleMetin - English messages
+# ============================================
+# Choose the language file in config.yml:  language: en
+#
+# Formatting: legacy codes (&e, &l, &#ff8800) and MiniMessage (<gradient:gold:yellow>, <#ff8800>,
+# <hover:show_text:'...'>, <click:run_command:'/...'>) both work, even mixed in one line.
+# Set a message to "" to disable it. Missing keys are added automatically on startup.
+# Placeholders are written as %name% and listed next to each message.
+
+prefix: "&8[&eSimpleMetin&8]&r "
+
+# ── General ─────────────────────────────────────────────────
+no-permission: "&cYou don't have permission to use this command"
+player-only: "&cOnly players can use this command."
+player-not-found: "&cPlayer &e%player% &cnot found."            # %player%
+player-never-joined: "&cPlayer &e%player% &cwas not found (never played on this server)."  # %player%
+invalid-number: "&cInvalid number: &e%value%"                    # %value%
+usage: "&cUsage: &e%usage%"                                      # %usage%
+reloaded: "&aConfiguration reloaded successfully"
+reload-pending-loaded: "&aLoaded &e%count% &apreviously unavailable crystal(s)."  # %count%
+
+# ── Crystals ────────────────────────────────────────────────
+spawned: "&aSpawned crystal &e%id%&a at your location"           # %id% %type%
+spawn-unknown-type: "&cCrystal type &e%type% &cdoes not exist in config.yml."  # %type%
+spawn-invalid-id: "&cInvalid ID &e%id%&c: use 1-32 characters a-z, 0-9, - or _."  # %id%
+spawn-id-taken: "&cThe ID &e%id% &cis already used."             # %id%
+removed: "&cRemoved crystal &e%id%"                              # %id%
+not-found: "&cCrystal &e%id%&c not found"                        # %id%
+no-crystal-nearby: "&cNo crystal within &e%range% &cblocks."     # %range%
+respawned: "&aManually respawned crystal &e%id%"                 # %id%
+not-destroyed: "&cCrystal &e%id% &cis not destroyed."            # %id%
+teleported: "&aTeleported to crystal &e%id%&a."                  # %id%
+
+list-empty: "&7No crystals."
+list-header: "&e&lCrystals &7(%count%):"                         # %count%
+# %id% %status% %type% %hp% %max_hp% %world% %x% %y% %z% %spawner%
+list-entry: "&7- &e%id% %status% &7Type: &f%type% &7HP: &c%hp%&7/&c%max_hp% &8(%world% %x% %y% %z%)"
+list-entry-pending: "&7- &e%id% %status% &7world or crystal type not available"  # %id% %status%
+status-active: "&a[ACTIVE]"
+status-destroyed: "&c[DESTROYED]"
+status-pending: "&6[PENDING]"
+
+# /metin info - %id% %type% %display_name% %status% %hp% %max_hp% %world% %x% %y% %z% %respawn% %spawner% %expires%
+info:
+  - "&e&lCrystal &f%id% %status%"
+  - "&7Type: &f%type% &7(%display_name%&7)"
+  - "&7HP: &c%hp%&7/&c%max_hp%"
+  - "&7Location: &f%world% %x% %y% %z%"
+  - "&7Respawn in: &f%respawn% &7| Spawner: &f%spawner% &7| Vanishes in: &f%expires%"
+none: "-"
+
+crystal-destroyed: "&e%display_name% &ahas been destroyed!"      # %display_name% %id% %player%
+crystal-hit: "&7Crystal HP: &c%hp%&7/&c%max_hp%"                  # %hp% %max_hp% %damage% %display_name%
+respawn-countdown: "&7Respawns in: &e%time%s"                     # %time%
+hit-cooldown: "&cYou must wait &e%time%s &cbefore attacking again!"  # %time%
+inventory-full: "&eYour inventory is full! Some items were dropped on the ground."
+bossbar-crystal: "%display_name% &7- &c%hp%&7/&c%max_hp%"        # %display_name% %hp% %max_hp% %id%
+
+# ── Statistics (/metin stats) ───────────────────────────────
+# %player% %destroyed% %damage% %items% %money% %strength% %rank_destroyed% %rank_damage% %rank_items% %rank_money%
+stats:
+  - "&e&l%player%'s Stats:"
+  - "&7Crystals Destroyed: &e%destroyed% &8(#%rank_destroyed%)"
+  - "&7Total Damage: &e%damage% &8(#%rank_damage%)"
+  - "&7Items Received: &e%items% &8(#%rank_items%)"
+  - "&7Money Earned: &e$%money% &8(#%rank_money%)"
+  - "&7Strength: &e%strength%"
+stats-types-header: "&7Destroyed by type:"
+stats-type-line: "&7  - &f%type%&7: &e%count%"                   # %type% %count%
+stats-none: "&7%player% has not attacked any crystal yet."       # %player%
+
+# ── Boosts ──────────────────────────────────────────────────
+boost-activated: "&a&lBOOST ACTIVATED! &e%multiplier%x &adrop rate for &e%duration%"  # %multiplier% %duration%
+boost-expired: "&c&lBOOST EXPIRED! &7Your drop boost has ended."
+global-boost-activated: "&6&l[SERVER] &e%multiplier%x &6Global Drop Boost activated for &e%duration%&6!"  # %multiplier% %duration%
+global-boost-expired: "&c&l[SERVER] &7Global Drop Boost has expired."
+boost-already-active: "&cYou already have an active boost!"
+boost-player-activated: "&aActivated &e%multiplier%x &aboost for &e%player%"  # %multiplier% %player% %duration%
+boost-player-replaced: "&aActivated &e%multiplier%x &aboost for &e%player% &7(replaced the previous personal boost)"
+boost-invalid-type: "&cInvalid type! Use 'global' or 'player'"
+bossbar-boost-personal: "&e&l⚡ PERSONAL BOOST &e%multiplier%x &7- &e%time%"  # %multiplier% %time%
+bossbar-boost-global: "&6&l⭐ GLOBAL BOOST &6%multiplier%x &7- &6%time%"      # %multiplier% %time%
+
+# Voucher item - %multiplier% %duration%
+voucher-name: "&e&l✦ DROP BOOST VOUCHER ✦"
+voucher-lore:
+  - "&7Right-click to activate"
+  - "&7Boost: &e%multiplier%x"
+  - "&7Duration: &e%duration%"
+  - ""
+  - "&6&lPERSONAL BOOST"
+voucher-given: "&aGave boost voucher to %player% (&e%multiplier%x &afor &e%duration%&a)"  # %player% %multiplier% %duration%
+voucher-received: "&aYou received a boost voucher!"
+
+# ── Leaderboards ────────────────────────────────────────────
+leaderboard-updating: "&eUpdating statistics files..."
+leaderboard-updated: "&aStatistics updated successfully! &7Check &eleaderboards.yml &7and &estatistics.yml&7."
+
+# ── Player strength (/ma) ───────────────────────────────────
+strength-added: "&aAdded &e%value% &ato &e%player%&a. New strength: &e%strength%"  # %value% %player% %strength%
+strength-added-capped: "&aAdded &e%value% &ato &e%player%&a. New strength: &e%strength% &7(minimum %min%)"
+strength-set: "&aSet strength of &e%player% &ato &e%strength%"   # %player% %strength%
+strength-get: "&7Player &e%player% &7- strength: &e%strength%"   # %player% %strength%
+strength-reset: "&aReset strength of &e%player% &ato the default (%strength%)"  # %player% %strength%
+strength-too-low: "&cStrength must be at least &e%min%&c."       # %min%
+strength-help:
+  - "&e&lMetinAdmin Commands:"
+  - "&7/ma add <player> <value> &f- Add to a player's strength"
+  - "&7/ma set <player> <value> &f- Set a player's strength"
+  - "&7/ma get <player> &f- Show a player's strength"
+  - "&7/ma reset <player> &f- Reset to the default (%default%)"
+
+# ── Automatic spawns ────────────────────────────────────────
+# %spawner% %display_name% %type% %id% %world% %x% %y% %z% %time% %player%
+spawner-warning: "&6&l[METIN] &e%display_name% &ewill appear in &f%time%&e!"
+spawner-spawned: "&6&l[METIN] &r%display_name% &eappeared at &f%x% %y% %z% &7(%world%)&e!"
+spawner-despawned: "&6&l[METIN] &7%display_name% &7at &f%x% %y% %z% &7has vanished."
+spawner-destroyed: "&6&l[METIN] &e%player% &adestroyed %display_name%&a!"
+spawner-list-header: "&e&lSpawners:"
+spawner-list-entry: "&7- &e%spawner% %state% &7[%mode%] &7alive: &a%alive%&7/&a%max% &7next: &e%next%"  # %spawner% %state% %mode% %alive% %max% %next%
+spawner-state-enabled: "&a[ON]"
+spawner-state-disabled: "&c[OFF]"
+spawner-not-found: "&cSpawner &e%spawner% &cnot found."
+spawner-forced: "&aSpawned crystal &e%id% &afrom spawner &e%spawner%&a."
+spawner-force-searching: "&eLooking for a place to spawn a crystal from &f%spawner%&e..."
+spawner-force-failed: "&cSpawner &e%spawner% &ccould not find a valid location."
+spawner-point-added: "&aAdded point &e#%index% &ato spawner &e%spawner%&a."  # %index% %spawner%
+spawner-point-removed: "&aRemoved point &e#%index% &afrom spawner &e%spawner%&a."
+spawner-point-invalid: "&cSpawner &e%spawner% &chas no point &e#%index%&c."
+spawner-point-header: "&e&lPoints of %spawner%:"
+spawner-point-entry: "&7#%index% &f%world% %x% %y% %z%"
+spawner-point-none: "&7Spawner %spawner% has no points."
+
+# ── Custom items & drops ────────────────────────────────────
+item-hand-empty: "&cHold an item in your main hand."
+item-saved: "&aSaved the held item as &e%key%&a. Use &fcustom-item: %key% &ain drops."  # %key%
+item-not-found: "&cCustom item &e%key% &cnot found."
+item-removed: "&aRemoved custom item &e%key%&a."
+item-given: "&aGave &e%amount%x %key% &ato &e%player%&a."         # %amount% %key% %player%
+items-list-header: "&e&lCustom items &7(%count%):"
+items-list-entry: "&7- &e%key% &7(%material%)"                   # %key% %material%
+items-list-empty: "&7No custom items saved yet."
+drop-added: "&aAdded drop &e%key% &ato &e%type% &7(%section%, %chance%%, amount %amount%)"  # %key% %type% %section% %chance% %amount%
+drop-invalid-section: "&cSection must be &ehit &cor &edeath&c."
+
+# ── Help (/metin) - each line is shown only with the matching permission ──
+help-header: "&e&lSimpleMetin Commands:"
+help-spawn: "&7/metin spawn <type> [id|auto] [name] &f- Spawn a crystal"
+help-remove: "&7/metin remove <id|nearest> &f- Remove a crystal"
+help-list: "&7/metin list &f- List all crystals"
+help-info: "&7/metin info [id|nearest] &f- Crystal details"
+help-tp: "&7/metin tp <id> &f- Teleport to a crystal"
+help-respawn: "&7/metin respawn <id|nearest> &f- Manually respawn a crystal"
+help-reload: "&7/metin reload &f- Reload configuration and messages"
+help-stats: "&7/metin stats &f- Your statistics"
+help-stats-others: "&7/metin stats <player> &f- Statistics of another player"
+help-givevoucher: "&7/metin givevoucher <player> <mult> <dur> &f- Give boost voucher"
+help-boost: "&7/metin boost <global|player> <mult> <dur> [player] &f- Activate boost"
+help-leaderboard: "&7/metin updateleaderboard &f- Manually update leaderboards.yml"
+help-spawner: "&7/metin spawner <list|spawn|point> ... &f- Automatic spawns"
+help-items: "&7/metin item <save|give|remove|list> ... &f- Custom drop items"
+help-adddrop: "&7/metin adddrop <type> <hit|death> <chance> [amount] [key] &f- Add the held item as a drop"

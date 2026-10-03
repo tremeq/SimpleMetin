@@ -53,6 +53,36 @@ public class StatsManager {
         return playerStats.values();
     }
 
+    /** Sorted TOP 100 lists shared by all placeholder requests (scoreboards can ask many times per second). */
+    private record TopCache(long builtAt, List<PlayerStats> destroyed, List<PlayerStats> damage,
+                            List<PlayerStats> items, List<PlayerStats> money) {
+    }
+
+    public static final int TOP_SIZE = 100;
+    private volatile TopCache topCache;
+
+    /**
+     * Cached TOP list for a category (destroyed, damage, items, money), rebuilt at most every
+     * settings.top-cache-seconds (default 5). Safe to call from async threads.
+     */
+    public List<PlayerStats> getCachedTop(String category) {
+        long ttlMs = Math.max(0, plugin.getConfig().getLong("settings.top-cache-seconds", 5)) * 1000L;
+        var cache = topCache;
+        if (cache == null || System.currentTimeMillis() - cache.builtAt() > ttlMs) {
+            cache = new TopCache(System.currentTimeMillis(),
+                    getTopCrystalsDestroyed(TOP_SIZE), getTopDamage(TOP_SIZE),
+                    getTopItemsReceived(TOP_SIZE), getTopMoneyEarned(TOP_SIZE));
+            topCache = cache;
+        }
+        return switch (category) {
+            case "destroyed" -> cache.destroyed();
+            case "damage" -> cache.damage();
+            case "items" -> cache.items();
+            case "money" -> cache.money();
+            default -> List.of();
+        };
+    }
+
     public List<PlayerStats> getTopCrystalsDestroyed(int limit) {
         return playerStats.values().stream()
                 .sorted((a, b) -> Integer.compare(b.getCrystalsDestroyed(), a.getCrystalsDestroyed()))
@@ -239,18 +269,26 @@ public class StatsManager {
     }
 
     private void startLeaderboardUpdateTask() {
-        long interval = plugin.getConfig().getLong("settings.leaderboard-update-interval", 6000); // 5 min default
-
-        leaderboardUpdateTask = Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, () -> {
-            saveLeaderboards();
-            saveReadableStatistics();
-        }, interval, interval);
+        restartLeaderboardTask();
 
         // Save immediately on start
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             saveLeaderboards();
             saveReadableStatistics();
         });
+    }
+
+    /** (Re)schedules leaderboard file generation with the configured interval (also used by /metin reload). */
+    public void restartLeaderboardTask() {
+        if (leaderboardUpdateTask != null) {
+            leaderboardUpdateTask.cancel();
+        }
+        long interval = Math.max(1, plugin.getConfig().getLong("settings.leaderboard-update-interval", 6000)); // 5 min default
+
+        leaderboardUpdateTask = Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, () -> {
+            saveLeaderboards();
+            saveReadableStatistics();
+        }, interval, interval);
     }
 
     public void shutdown() {
