@@ -1,6 +1,20 @@
-# SimpleMetin 1.1.0 — raport zakończenia prac
+# SimpleMetin 1.1.1 — raport testów
 
-Data: 3 października 2026.
+Data: 4 października 2026.
+
+## Wersja 1.1.1 — obrażenia na uderzenie
+
+Każdy typ metina wybiera sposób liczenia obrażeń opcją `use-damage-per-hit`:
+
+- `true` — każde uderzenie zabiera `damage-per-hit` HP (siła gracza jest pomijana),
+- `false` — każde uderzenie zabiera siłę gracza z `/ma` (domyślnie 10),
+- brak opcji — typy z `damage-per-hit` (configi z 1.0.0) mają stałe obrażenia, typy bez niego (configi z 1.1.0) siłę gracza.
+
+Obrażenia wynoszą zawsze co najmniej 1. `/metin info` pokazuje tryb obrażeń (`%damage%`, wiadomości `damage-fixed` / `damage-strength`).
+
+Nowe testy jednostkowe: stałe obrażenia przy `true`, domyślne zachowanie dla configów z 1.0.0 i 1.1.0, `damage-per-hit: 0`, linia obrażeń w `/metin info`. Nowe sprawdzenia E2E na serwerze: typ z `use-damage-per-hit: true` i `damage-per-hit: 3` przy sile 25 (9 → 6 HP), typ z samym `damage-per-hit: 2` (9 → 7 HP) oraz `/metin info` dla obu trybów. Poprawiono też wyścig w teście E2E znikania kryształu ze spawnera: nowy spawn mógł od razu dostać to samo wolne ID, więc test sprawdza teraz ogłoszenie z pozycją kryształu zamiast ID.
+
+## Wersja 1.1.0
 
 ## Zakres przejęty z rozmowy Claude
 
@@ -22,8 +36,8 @@ Zachowano ustalenia użytkownika: domyślnie angielski, kolory `&` i MiniMessage
 | Sprawdzenie | Wynik |
 |---|---|
 | `mvn -o -B clean package` na Java 21 | BUILD SUCCESS |
-| JUnit / Mockito | 123 testy, 0 niepowodzeń, 0 błędów, 0 pominiętych |
-| E2E: Paper 1.21.1 build 133 + PlaceholderAPI 2.11.6 | 124/124 PASS |
+| JUnit / Mockito (1.1.1) | 126 testów, 0 niepowodzeń, 0 błędów, 0 pominiętych |
+| E2E (1.1.1): Paper 1.21.1 build 133 + PlaceholderAPI 2.11.6 | 128/128 PASS |
 | `git diff --check` | Bez błędów whitespace |
 | Serwer testowy po zakończeniu | Zatrzymany |
 
@@ -37,11 +51,11 @@ Po E2E zmieniono jedynie dokumentację i dwa komentarze w `spawners.yml`, nastę
 
 ## Artefakty i ponowne uruchomienie
 
-- JAR: [target/SimpleMetin-1.1.0.jar](target/SimpleMetin-1.1.0.jar).
+- JAR: [target/SimpleMetin-1.1.1.jar](target/SimpleMetin-1.1.1.jar).
 - Raporty jednostkowe: `target/surefire-reports/`.
 - Serwer testowy: `E:\Pliki Minecraft\test\simplemetin-server`.
 - Zestaw E2E: `E:\Pliki Minecraft\test\simplemetin-bot\e2e.js`.
-- Log E2E: `E:\Pliki Minecraft\test\simplemetin-bot\e2e-codex-1.1.log`.
+- Log E2E: `E:\Pliki Minecraft\test\simplemetin-bot\e2e-run-1.1.1b.log`.
 - Wyniki poszczególnych asercji: `E:\Pliki Minecraft\test\simplemetin-bot\results.json`.
 - Kopia wcześniejszego zestawu: `E:\Pliki Minecraft\test\simplemetin-bot\e2e-before-codex.js`.
 
@@ -51,4 +65,4 @@ Zestaw E2E pozostaje poza repozytorium w środowisku przygotowanym przez Claude.
 
 Wyniki dotyczą Java 21 i Paper 1.21.1 z PlaceholderAPI. Nie wykonywano testów obciążeniowych ani osobnej certyfikacji innych wersji Minecrafta, Purpura, ItemsAdder i pluginów ekonomii. Zapis custom itemów sprawdzono na przedmiocie z własnymi danymi; specjalne zachowania innych pluginów wymagają testu z nimi.
 
-Liczenie pieniędzy nadal opiera się na komendach `eco give`, a nie potwierdzeniu salda przez Vault. Modyfikacje nie zostały zacommitowane ani wdrożone na serwer produkcyjny.
+Liczenie pieniędzy nadal opiera się na komendach `eco give`, a nie potwierdzeniu salda przez Vault.

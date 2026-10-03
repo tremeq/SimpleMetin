@@ -53,6 +53,7 @@ public class CrystalManagerTest {
                 display-name: "&eTest"
                 type: respawn
                 max-hp: 30
+                use-damage-per-hit: false
                 damage-per-hit: 1
                 respawn-time: 60
                 show-actionbar: true
@@ -94,6 +95,20 @@ public class CrystalManagerTest {
                 hologram:
                   enabled: true
                   lines: ["%hp%"]
+              fixed_hit:
+                type: respawn
+                max-hp: 30
+                use-damage-per-hit: true
+                damage-per-hit: 4
+              legacy_hit:
+                type: respawn
+                max-hp: 30
+                damage-per-hit: 2
+              zero_hit:
+                type: respawn
+                max-hp: 30
+                use-damage-per-hit: true
+                damage-per-hit: 0
               half_chance:
                 type: respawn
                 max-hp: 100000
@@ -182,7 +197,7 @@ public class CrystalManagerTest {
     }
 
     @Test
-    @DisplayName("hit: damage = player strength (PlayerStatsManager), damage-per-hit is ignored")
+    @DisplayName("hit with use-damage-per-hit: false: damage = player strength (PlayerStatsManager), damage-per-hit is ignored")
     void hitUsesPlayerStrength() {
         when(playerStats.getDamage(steve.getUniqueId())).thenReturn(7);
         manager.spawnCrystal("c1", "test_respawn", loc(), null);
@@ -193,6 +208,44 @@ public class CrystalManagerTest {
         assertEquals(7, statsManager.getStats(steve.getUniqueId()).getTotalDamageDealt());
         assertEquals("HP 23/30\nID c1", TestSupport.plain(TestSupport.holograms(spawned).get(0).text()));
         verify(steve, atLeastOnce()).sendActionBar(any(net.kyori.adventure.text.Component.class));
+    }
+
+    @Test
+    @DisplayName("hit with use-damage-per-hit: true: every hit deals damage-per-hit, player strength is ignored")
+    void hitUsesDamagePerHit() {
+        when(playerStats.getDamage(steve.getUniqueId())).thenReturn(7);
+        manager.spawnCrystal("c1", "fixed_hit", loc(), null);
+
+        hit("c1", 2);
+
+        var data = manager.getCrystalById("c1");
+        assertEquals(22, data.getCurrentHp());
+        assertEquals(8, statsManager.getStats(steve.getUniqueId()).getTotalDamageDealt());
+        assertEquals(4, manager.getDamagePerHit(data));
+    }
+
+    @Test
+    @DisplayName("without use-damage-per-hit: damage-per-hit set (1.0.0 config) -> fixed damage, not set (1.1.0 config) -> strength")
+    void damageModeDefaultsKeepOldConfigs() {
+        when(playerStats.getDamage(steve.getUniqueId())).thenReturn(7);
+        manager.spawnCrystal("legacy", "legacy_hit", loc(), null);
+        manager.spawnCrystal("strength", "test_once", loc().add(5, 0, 0), null);
+
+        hit("legacy", 1);
+        hit("strength", 1);
+
+        assertEquals(28, manager.getCrystalById("legacy").getCurrentHp());
+        assertEquals(3, manager.getCrystalById("strength").getCurrentHp());
+        assertEquals(-1, manager.getDamagePerHit(manager.getCrystalById("strength")));
+    }
+
+    @Test
+    @DisplayName("damage-per-hit 0 or negative still deals 1 damage (crystal never becomes unkillable)")
+    void zeroDamagePerHitDealsOne() {
+        manager.spawnCrystal("c1", "zero_hit", loc(), null);
+        hit("c1", 1);
+        assertEquals(29, manager.getCrystalById("c1").getCurrentHp());
+        assertEquals(1, manager.getDamagePerHit(manager.getCrystalById("c1")));
     }
 
     @Test

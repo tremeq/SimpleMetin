@@ -45,10 +45,12 @@ status-pending: "&6[OCZEKUJE]"
 info:
   - "&e&lKrysztal &f%id% %status%"
   - "&7Typ: &f%type% &7(%display_name%&7)"
-  - "&7HP: &c%hp%&7/&c%max_hp%"
+  - "&7HP: &c%hp%&7/&c%max_hp% &7| Obrazenia: %damage%"
   - "&7Pozycja: &f%world% %x% %y% %z%"
   - "&7Respawn za: &f%respawn% &7| Spawner: &f%spawner% &7| Zniknie za: &f%expires%"
 none: "-"
+damage-fixed: "&f%damage% &7na uderzenie"                            # %damage% (w info)
+damage-strength: "&fsila gracza &7(/ma)"                             # (w info)
 
 crystal-destroyed: "&e%display_name% &azostal zniszczony!"        # %display_name% %id% %player%
 crystal-hit: "&7HP krysztalu: &c%hp%&7/&c%max_hp%"                  # %hp% %max_hp% %damage% %display_name%

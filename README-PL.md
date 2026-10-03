@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.1.0-blue.svg" alt="Version 1.1.0">
+  <img src="https://img.shields.io/badge/version-1.1.1-blue.svg" alt="Version 1.1.1">
   <img src="https://img.shields.io/badge/paper-1.21.1-green.svg" alt="Paper 1.21.1">
   <img src="https://img.shields.io/badge/java-21-orange.svg" alt="Java 21">
 </p>
@@ -12,7 +12,7 @@
 
 **Metiny, nagrody i strefy eventowe dla Twojego serwera Minecraft.**
 
-**Wersja:** 1.1.0 · **Autor:** TremeQu · **Platforma testowa:** Paper 1.21.1 · **Java:** 21
+**Wersja:** 1.1.1 · **Autor:** TremeQu · **Platforma testowa:** Paper 1.21.1 · **Java:** 21
 
 ## 📢 O SimpleMetin
 
@@ -41,7 +41,7 @@ SimpleMetin działa bez PlaceholderAPI i ekonomii. Nie wymaga osobnego pluginu d
 
 - **Metiny z własnym HP** — konfigurowalne typy, nazwy, zdrowie oraz efekty zniszczenia.
 - **Dwa tryby kryształów** — jednorazowe metiny i metiny odradzające się po określonym czasie.
-- **Siła gracza** — osobna wartość obrażeń zarządzana przez `/ma`, z zapisem danych i rankingiem.
+- **Obrażenia na uderzenie lub siła gracza** — każdy typ metina przyjmuje stałe `damage-per-hit` albo siłę gracza (`/ma`, zapisywaną na stałe, z rankingiem).
 - **Nagrody za uderzenie i zniszczenie** — przedmioty oraz komendy konsolowe z indywidualnymi szansami.
 - **Rozbudowane dropy** — losowe ilości, pule z wagami, enchanty, custom model data i przedmioty zapisane z ręki wraz z NBT.
 - **Automatyczne spawny** — losowe miejsca w strefach lub ustalone punkty, wagi typów, limity i czas życia kryształów.
@@ -73,7 +73,7 @@ Nagrody za zniszczenie otrzymuje gracz zadający ostatni cios. Boosty zwiększaj
 
 ## ⚡ Szybki start
 
-1. Zbuduj plugin poleceniem `mvn clean package` i umieść `target/SimpleMetin-1.1.0.jar` w katalogu `plugins/`.
+1. Zbuduj plugin poleceniem `mvn clean package` i umieść `target/SimpleMetin-1.1.1.jar` w katalogu `plugins/`.
 2. Uruchom serwer, aby wygenerować konfigurację.
 3. Ustaw własne typy i nagrody w `plugins/SimpleMetin/config.yml`.
 4. Wykonaj `/metin spawn metin_common`, aby postawić pierwszy kryształ.
@@ -218,7 +218,8 @@ Dostępne w `messages-en.yml` i `messages-pl.yml`. Każda wiadomość obsługuje
 | `no-crystal-nearby` | `%range%` |
 | `list-entry` | `%id%`, `%status%`, `%type%`, `%hp%`, `%max_hp%`, `%world%`, `%x%`, `%y%`, `%z%`, `%spawner%` |
 | `list-entry-pending` | `%id%`, `%status%` |
-| `info` | `%id%`, `%type%`, `%display_name%`, `%status%`, `%hp%`, `%max_hp%`, `%world%`, `%x%`, `%y%`, `%z%`, `%respawn%`, `%spawner%`, `%expires%` |
+| `info` | `%id%`, `%type%`, `%display_name%`, `%status%`, `%hp%`, `%max_hp%`, `%damage%`, `%world%`, `%x%`, `%y%`, `%z%`, `%respawn%`, `%spawner%`, `%expires%` |
+| `damage-fixed` (`%damage%` w `info`) | `%damage%` |
 | `crystal-destroyed` | `%display_name%`, `%id%`, `%player%` |
 | `crystal-hit` (ActionBar) | `%hp%`, `%max_hp%`, `%damage%`, `%display_name%` |
 | `respawn-countdown` (hologram), `hit-cooldown` (ActionBar) | `%time%` |
@@ -248,11 +249,17 @@ Dostępne w `messages-en.yml` i `messages-pl.yml`. Każda wiadomość obsługuje
 | `items-list-entry` | `%key%`, `%material%` |
 | `drop-added` | `%key%`, `%type%`, `%section%`, `%chance%`, `%amount%` |
 
-Wiadomości bez placeholderów: `prefix`, `no-permission`, `player-only`, `reloaded`, `list-empty`, `status-active`, `status-destroyed`, `status-pending`, `none`, `inventory-full`, `stats-types-header`, `boost-expired`, `global-boost-expired`, `boost-already-active`, `boost-invalid-type`, `voucher-received`, `leaderboard-updating`, `leaderboard-updated`, `spawner-list-header`, `spawner-state-enabled`, `spawner-state-disabled`, `item-hand-empty`, `items-list-empty`, `drop-invalid-section` oraz linie `help-*`.
+Wiadomości bez placeholderów: `prefix`, `no-permission`, `player-only`, `reloaded`, `list-empty`, `status-active`, `status-destroyed`, `status-pending`, `none`, `damage-strength`, `inventory-full`, `stats-types-header`, `boost-expired`, `global-boost-expired`, `boost-already-active`, `boost-invalid-type`, `voucher-received`, `leaderboard-updating`, `leaderboard-updated`, `spawner-list-header`, `spawner-state-enabled`, `spawner-state-disabled`, `item-hand-empty`, `items-list-empty`, `drop-invalid-section` oraz linie `help-*`.
 
 ---
 
 ## 🔧 Nowości i poprawki
+
+### Wersja 1.1.1
+
+- ✅ Wraca `damage-per-hit`: każdy typ metina wybiera obrażenia przez `use-damage-per-hit: true` (stałe `damage-per-hit`) lub `false` (siła gracza z `/ma`).
+- ✅ Configi z 1.0.0 (z `damage-per-hit`) i 1.1.0 (bez niego) działają jak wcześniej, jeśli `use-damage-per-hit` nie jest ustawione.
+- ✅ `/metin info` pokazuje, jak metin przyjmuje obrażenia (`%damage%` w wiadomości `info`).
 
 ### Wersja 1.1.0
 
@@ -291,7 +298,7 @@ Przewodnik jest dostępny po [polsku](docs/GUIDE-PL.md) i [angielsku](docs/GUIDE
 - [🔑 Komendy i uprawnienia](docs/GUIDE-PL.md#komendy-i-uprawnienia) — pełna lista permisji.
 - [📊 Statystyki i placeholdery](docs/GUIDE-PL.md#statystyki-i-placeholdery) — wartości graczy i rankingi TOP.
 - [💾 Zapis danych](docs/GUIDE-PL.md#pliki-i-zapis-danych) — pliki pluginu, autozapis i restart.
-- [🧪 Raport testów](TEST_REPORT.md) — zakres weryfikacji wersji 1.1.0.
+- [🧪 Raport testów](TEST_REPORT.md) — zakres weryfikacji wersji 1.1.1.
 
 Przykładowe pliki: [config.yml](src/main/resources/config.yml) · [spawners.yml](src/main/resources/spawners.yml) · [messages-en.yml](src/main/resources/messages-en.yml) · [messages-pl.yml](src/main/resources/messages-pl.yml)
 
@@ -306,4 +313,4 @@ Przykładowe pliki: [config.yml](src/main/resources/config.yml) · [spawners.yml
 
 ---
 
-**Sprawdzono na Paper 1.21.1:** 123 testy jednostkowe i 124 testy E2E zakończone powodzeniem. Szczegóły środowiska i zakres sprawdzeń znajdują się w [raporcie testów](TEST_REPORT.md).
+**Sprawdzono na Paper 1.21.1:** 126 testów jednostkowych i 128 testów E2E zakończonych powodzeniem. Szczegóły środowiska i zakres sprawdzeń znajdują się w [raporcie testów](TEST_REPORT.md).

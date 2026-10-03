@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.1.0-blue.svg" alt="Version 1.1.0">
+  <img src="https://img.shields.io/badge/version-1.1.1-blue.svg" alt="Version 1.1.1">
   <img src="https://img.shields.io/badge/paper-1.21.1-green.svg" alt="Paper 1.21.1">
   <img src="https://img.shields.io/badge/java-21-orange.svg" alt="Java 21">
 </p>
@@ -12,7 +12,7 @@
 
 **Metin crystals, rewards, and event areas for your Minecraft server.**
 
-**Version:** 1.1.0 · **Author:** TremeQu · **Tested platform:** Paper 1.21.1 · **Java:** 21
+**Version:** 1.1.1 · **Author:** TremeQu · **Tested platform:** Paper 1.21.1 · **Java:** 21
 
 ## 📢 About SimpleMetin
 
@@ -41,7 +41,7 @@ SimpleMetin works without PlaceholderAPI or an economy plugin. No separate holog
 
 - **Crystals with custom HP** — configurable types, names, health, and destruction effects.
 - **Two crystal modes** — one-time crystals and crystals that respawn after a configurable delay.
-- **Player strength** — a separate damage value managed through `/ma`, with persistent storage and a leaderboard.
+- **Damage per hit or player strength** — each crystal type either takes a fixed `damage-per-hit` or the player's strength (`/ma`, persistent, with a leaderboard).
 - **Hit and destruction rewards** — items and console commands with individual drop chances.
 - **Advanced drops** — random quantities, weighted pools, enchantments, custom model data, and items saved from your hand with their NBT.
 - **Automatic spawns** — random locations within areas or fixed points, weighted crystal types, limits, and crystal lifetimes.
@@ -73,7 +73,7 @@ Destruction rewards go to the player who lands the final hit. Boosts increase dr
 
 ## ⚡ Quick Start
 
-1. Build the plugin with `mvn clean package` and place `target/SimpleMetin-1.1.0.jar` in your server's `plugins/` directory.
+1. Build the plugin with `mvn clean package` and place `target/SimpleMetin-1.1.1.jar` in your server's `plugins/` directory.
 2. Start the server to generate the configuration files.
 3. Configure crystal types and rewards in `plugins/SimpleMetin/config.yml`.
 4. Run `/metin spawn metin_common` to place your first crystal.
@@ -218,7 +218,8 @@ Available in `messages-en.yml` and `messages-pl.yml`. Every message also accepts
 | `no-crystal-nearby` | `%range%` |
 | `list-entry` | `%id%`, `%status%`, `%type%`, `%hp%`, `%max_hp%`, `%world%`, `%x%`, `%y%`, `%z%`, `%spawner%` |
 | `list-entry-pending` | `%id%`, `%status%` |
-| `info` | `%id%`, `%type%`, `%display_name%`, `%status%`, `%hp%`, `%max_hp%`, `%world%`, `%x%`, `%y%`, `%z%`, `%respawn%`, `%spawner%`, `%expires%` |
+| `info` | `%id%`, `%type%`, `%display_name%`, `%status%`, `%hp%`, `%max_hp%`, `%damage%`, `%world%`, `%x%`, `%y%`, `%z%`, `%respawn%`, `%spawner%`, `%expires%` |
+| `damage-fixed` (`%damage%` in `info`) | `%damage%` |
 | `crystal-destroyed` | `%display_name%`, `%id%`, `%player%` |
 | `crystal-hit` (ActionBar) | `%hp%`, `%max_hp%`, `%damage%`, `%display_name%` |
 | `respawn-countdown` (hologram), `hit-cooldown` (ActionBar) | `%time%` |
@@ -248,11 +249,17 @@ Available in `messages-en.yml` and `messages-pl.yml`. Every message also accepts
 | `items-list-entry` | `%key%`, `%material%` |
 | `drop-added` | `%key%`, `%type%`, `%section%`, `%chance%`, `%amount%` |
 
-Messages without placeholders: `prefix`, `no-permission`, `player-only`, `reloaded`, `list-empty`, `status-active`, `status-destroyed`, `status-pending`, `none`, `inventory-full`, `stats-types-header`, `boost-expired`, `global-boost-expired`, `boost-already-active`, `boost-invalid-type`, `voucher-received`, `leaderboard-updating`, `leaderboard-updated`, `spawner-list-header`, `spawner-state-enabled`, `spawner-state-disabled`, `item-hand-empty`, `items-list-empty`, `drop-invalid-section` and the `help-*` lines.
+Messages without placeholders: `prefix`, `no-permission`, `player-only`, `reloaded`, `list-empty`, `status-active`, `status-destroyed`, `status-pending`, `none`, `damage-strength`, `inventory-full`, `stats-types-header`, `boost-expired`, `global-boost-expired`, `boost-already-active`, `boost-invalid-type`, `voucher-received`, `leaderboard-updating`, `leaderboard-updated`, `spawner-list-header`, `spawner-state-enabled`, `spawner-state-disabled`, `item-hand-empty`, `items-list-empty`, `drop-invalid-section` and the `help-*` lines.
 
 ---
 
 ## 🔧 Recent Updates & Bug Fixes
+
+### Version 1.1.1
+
+- ✅ `damage-per-hit` is back: every crystal type chooses its damage with `use-damage-per-hit: true` (fixed `damage-per-hit`) or `false` (player strength from `/ma`).
+- ✅ Configs from 1.0.0 (with `damage-per-hit`) and 1.1.0 (without it) keep working as before when `use-damage-per-hit` is not set.
+- ✅ `/metin info` shows how a crystal takes damage (`%damage%` in the `info` message).
 
 ### Version 1.1.0
 
@@ -291,7 +298,7 @@ The guide is available in [English](docs/GUIDE.md) and [Polish](docs/GUIDE-PL.md
 - [🔑 Commands & Permissions](docs/GUIDE.md#commands-and-permissions) — the full permission list.
 - [📊 Statistics & Placeholders](docs/GUIDE.md#statistics-and-placeholders) — player values and leaderboards.
 - [💾 Data Storage](docs/GUIDE.md#files-and-data-storage) — plugin files, autosaving, and restarts.
-- [🧪 Test Report](TEST_REPORT.md) — verification coverage for version 1.1.0.
+- [🧪 Test Report](TEST_REPORT.md) — verification coverage for version 1.1.1.
 
 Example files: [config.yml](src/main/resources/config.yml) · [spawners.yml](src/main/resources/spawners.yml) · [messages-en.yml](src/main/resources/messages-en.yml) · [messages-pl.yml](src/main/resources/messages-pl.yml)
 
@@ -306,4 +313,4 @@ Example files: [config.yml](src/main/resources/config.yml) · [spawners.yml](src
 
 ---
 
-**Verified on Paper 1.21.1:** 123 unit tests and 124 E2E checks passed. Environment details and verification scope are available in the [test report (Polish)](TEST_REPORT.md).
+**Verified on Paper 1.21.1:** 126 unit tests and 128 E2E checks passed. Environment details and verification scope are available in the [test report (Polish)](TEST_REPORT.md).

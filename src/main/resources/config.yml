@@ -66,6 +66,11 @@ boosts:
 # ============================================
 # Crystal types
 # ============================================
+# Damage per hit (per crystal type):
+#   use-damage-per-hit: true   every hit deals "damage-per-hit" HP (player strength is ignored)
+#   use-damage-per-hit: false  every hit deals the player's strength (/ma, default 10)
+#   not set: true if the type has "damage-per-hit", otherwise player strength
+#
 # Drops - every entry in hit-drops / death-drops is rolled on its own:
 #   item: DIAMOND            material, or
 #   custom-item: my_sword    an item saved with /metin item save my_sword (items.yml)
@@ -87,6 +92,8 @@ crystals:
     display-name: "&e&lCommon Metin"
     type: respawn
     max-hp: 50
+    use-damage-per-hit: true  # true = every hit deals damage-per-hit, false = damage = player strength (/ma, default 10)
+    damage-per-hit: 1
     respawn-time: 300
     show-actionbar: true
     show-bossbar: true
@@ -159,6 +166,8 @@ crystals:
     display-name: "&d&lRare Metin"
     type: one-time
     max-hp: 150
+    use-damage-per-hit: false  # damage = player strength (/ma), 150 HP = 15 hits at the default strength 10
+    damage-per-hit: 1  # used only when use-damage-per-hit is true
     respawn-time: 0
     show-actionbar: true
     show-bossbar: true

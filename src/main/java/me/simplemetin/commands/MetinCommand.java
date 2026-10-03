@@ -217,12 +217,15 @@ public class MetinCommand implements CommandExecutor, TabCompleter {
         var respawn = data.isDestroyed() && data.getRespawnTime() > now
                 ? SpawnerManager.formatTime((data.getRespawnTime() - now) / 1000) : none;
         var expires = data.getExpiresAt() > now ? SpawnerManager.formatTime((data.getExpiresAt() - now) / 1000) : none;
+        var perHit = crystalManager.getDamagePerHit(data);
+        var damage = perHit > 0 ? msg().raw("damage-fixed", "damage", perHit) : msg().raw("damage-strength");
 
         msg().sendRaw(sender, "info", "id", data.getId(), "type", data.getConfigId(),
                 "display_name", crystalManager.getDisplayName(data), "status", status(data),
                 "hp", data.getCurrentHp(), "max_hp", data.getMaxHp(), "world", data.getWorldName(),
                 "x", l.getBlockX(), "y", l.getBlockY(), "z", l.getBlockZ(), "respawn", respawn,
-                "spawner", data.getSpawnerId() != null ? data.getSpawnerId() : none, "expires", expires);
+                "spawner", data.getSpawnerId() != null ? data.getSpawnerId() : none, "expires", expires,
+                "damage", damage);
     }
 
     private void handleTeleport(CommandSender sender, String[] args) {

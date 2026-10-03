@@ -271,6 +271,22 @@ public class CrystalManager {
         return new MemoryConfiguration();
     }
 
+    /**
+     * true = every hit deals the type's damage-per-hit, false = the player's strength (/ma).
+     * Without use-damage-per-hit, types that set damage-per-hit (1.0.0 configs) keep the fixed damage
+     * and the rest (1.1.0 configs) keep player strength.
+     */
+    public static boolean usesDamagePerHit(ConfigurationSection config) {
+        return config.getBoolean("use-damage-per-hit", config.contains("damage-per-hit"));
+    }
+
+    /** Fixed damage of one hit on this crystal, or -1 when its type uses player strength. */
+    public int getDamagePerHit(CrystalData data) {
+        var config = plugin.getConfig().getConfigurationSection("crystals." + data.getConfigId());
+        if (config == null || !usesDamagePerHit(config)) return -1;
+        return Math.max(1, config.getInt("damage-per-hit", 1));
+    }
+
     /** Display name of a crystal: the override from /metin spawn or the type's display-name. */
     public String getDisplayName(CrystalData data) {
         if (data.getOverrideName() != null) return data.getOverrideName();
@@ -325,9 +341,11 @@ public class CrystalManager {
 
         var config = getCrystalConfig(data);
 
-        // Strength below 1 (e.g. edited players.yml) would make the crystal unkillable while still rolling hit-drops
-        var strength = Math.max(1, plugin.getPlayerStatsManager().getDamage(damager.getUniqueId()));
-        var dealt = data.damage(strength);
+        // Damage below 1 (e.g. edited players.yml) would make the crystal unkillable while still rolling hit-drops
+        var damage = Math.max(1, usesDamagePerHit(config)
+                ? config.getInt("damage-per-hit", 1)
+                : plugin.getPlayerStatsManager().getDamage(damager.getUniqueId()));
+        var dealt = data.damage(damage);
 
         // Track stats (only damage actually dealt, no overkill)
         var stats = plugin.getStatsManager().getOrCreateStats(damager.getUniqueId());

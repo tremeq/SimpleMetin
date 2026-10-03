@@ -1,4 +1,4 @@
-# SimpleMetin 1.1.0 — Complete Guide
+# SimpleMetin 1.1.1 — Complete Guide
 
 **English** | [Polski](GUIDE-PL.md)
 
@@ -10,7 +10,7 @@ Requirements: **Java 21 and Paper 1.21.1** (the version used for builds and test
 
 ## Installation and First Start
 
-1. Run `mvn clean package` from the project root and copy `target/SimpleMetin-1.1.0.jar` into your server's `plugins/` directory.
+1. Run `mvn clean package` from the project root and copy `target/SimpleMetin-1.1.1.jar` into your server's `plugins/` directory.
 2. Start the server. Configuration files will be created in `plugins/SimpleMetin/`.
 3. The default language is **English**. To enable Polish, set `language: pl` in `config.yml` and run `/metin reload`.
 4. As an administrator, run `/metin spawn metin_common`. A crystal will appear at your location with the ID `common-1`.
@@ -20,7 +20,15 @@ Example spawners are **disabled** by default. Configure an area or spawn points 
 
 ## Combat and Crystal Lifecycle
 
-Each accepted hit removes HP equal to the player's strength stored in `players.yml`. The default strength is 10, with a minimum of 1. Standard weapon damage does not affect crystal damage. A player's hit cooldown is shared across all crystals; the default is one second (`settings.hit-cooldown`).
+How much HP an accepted hit removes is chosen per crystal type:
+
+| `crystals.<type>` | Damage of one hit |
+|---|---|
+| `use-damage-per-hit: true` | `damage-per-hit` (default 1); player strength is ignored. |
+| `use-damage-per-hit: false` | The player's strength stored in `players.yml` (`/ma`, default 10). |
+| not set | `true` if the type has `damage-per-hit` (1.0.0 configs), otherwise player strength (1.1.0 configs). |
+
+Damage is always at least 1. Standard weapon damage does not affect crystal damage. `/metin info` shows the damage mode of a crystal. A player's hit cooldown is shared across all crystals; the default is one second (`settings.hit-cooldown`).
 
 Each hit rolls `hit-drops`, `hit-commands`, and `hit-pools`. The final hit also rolls `death-drops`, `death-commands`, and `death-pools`. Destruction rewards go to **the player who lands the final hit**, without sharing them among participants. If the inventory is full, excess items drop next to the crystal and a message is displayed.
 
@@ -69,7 +77,7 @@ Supported formats include `&` codes, `&#RRGGBB` colors, and MiniMessage, such as
 | `projectile-hits` | false | Hits from player projectiles. |
 | `nearest-range` | 10.0 | Search range for the nearest crystal. |
 
-Crystal types are defined under `crystals.<type>`: `display-name`, `type`, `max-hp`, `respawn-time`, `show-actionbar`, `show-bossbar`, `hologram`, and rewards. `death-effects` contains `particle`, `sound`, `volume`, and `pitch`. Legacy particle names, such as `EXPLOSION_HUGE`, have supported equivalents (`EXPLOSION_EMITTER`). The old `damage-per-hit` field is ignored; strength comes from player data.
+Crystal types are defined under `crystals.<type>`: `display-name`, `type`, `max-hp`, `respawn-time`, `show-actionbar`, `show-bossbar`, `hologram`, and rewards. `death-effects` contains `particle`, `sound`, `volume`, and `pitch`. Legacy particle names, such as `EXPLOSION_HUGE`, have supported equivalents (`EXPLOSION_EMITTER`). Damage per hit is set with `use-damage-per-hit` and `damage-per-hit` (see [Combat and Crystal Lifecycle](#combat-and-crystal-lifecycle)).
 
 ## Holograms and BossBars
 
@@ -346,4 +354,4 @@ Entity tags are `simplemetin`, `metin_<configId>` (e.g. `metin_metin_common`), a
 
 Run tests with `mvn test` and a full build with `mvn clean package` from the project root. JUnit reports are in `target/surefire-reports/`. A separate E2E suite on a real Paper 1.21.1 server checks combat, drops, boosts, permissions, languages, migration, TextDisplay, spawners, reloads, restarts, and crash recovery. Results and suite locations are documented in [TEST_REPORT.md (Polish)](../TEST_REPORT.md).
 
-Other older documentation files in the repository may refer to 1.0.0; this guide describes version 1.1.0.
+Other older documentation files in the repository may refer to 1.0.0; this guide describes version 1.1.1.

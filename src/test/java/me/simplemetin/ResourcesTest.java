@@ -29,7 +29,7 @@ class ResourcesTest {
     void pluginYml() {
         assertEquals(SimpleMetin.class.getName(), pluginYml.getString("main"));
         assertEquals("1.21", pluginYml.getString("api-version"));
-        assertEquals("1.1.0", pluginYml.getString("version"), "filtered from pom.xml");
+        assertEquals("1.1.1", pluginYml.getString("version"), "filtered from pom.xml");
         assertTrue(pluginYml.isConfigurationSection("commands.metin"));
         assertTrue(pluginYml.isConfigurationSection("commands.metinadmin"));
         assertTrue(pluginYml.getStringList("commands.metinadmin.aliases").contains("ma"));

@@ -161,6 +161,12 @@ class MetinCommandTest {
         run(admin, "info", "nearest");
         assertTrue(wasSent(admin, "Crystal test_respawn-1"), String.join(" | ", TestSupport.sentMessages(admin)));
         assertTrue(wasSent(admin, "HP: 30/30"));
+        assertTrue(wasSent(admin, "Damage: player strength"), String.join(" | ", TestSupport.sentMessages(admin)));
+
+        run(admin, "spawn", "fixed_hit", "fixed");
+        run(admin, "info", "fixed");
+        assertTrue(wasSent(admin, "Damage: 4 per hit"), String.join(" | ", TestSupport.sentMessages(admin)));
+        run(admin, "remove", "fixed");
 
         when(admin.getLocation()).thenReturn(new Location(world, 500, 64, 500));
         run(admin, "remove", "nearest");

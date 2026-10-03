@@ -1,4 +1,4 @@
-# SimpleMetin 1.1.0 — pełny przewodnik
+# SimpleMetin 1.1.1 — pełny przewodnik
 
 [English](GUIDE.md) | **Polski**
 
@@ -10,7 +10,7 @@ Wymagania: **Java 21 i Paper 1.21.1** (wersja używana do kompilacji i testów).
 
 ## Instalacja i pierwsze uruchomienie
 
-1. Wykonaj `mvn clean package` i skopiuj `target/SimpleMetin-1.1.0.jar` do `plugins/` serwera.
+1. Wykonaj `mvn clean package` i skopiuj `target/SimpleMetin-1.1.1.jar` do `plugins/` serwera.
 2. Uruchom serwer. Konfiguracja powstanie w `plugins/SimpleMetin/`.
 3. Domyślny język to **angielski**. Aby włączyć polski, ustaw `language: pl` w `config.yml` i wykonaj `/metin reload`.
 4. Jako administrator wykonaj `/metin spawn metin_common`. Kryształ pojawi się na Twojej pozycji z ID `common-1`.
@@ -20,7 +20,15 @@ Przykładowe spawnery są domyślnie **wyłączone**. Włącz je po ustawieniu s
 
 ## Walka i cykl życia
 
-Przyjęte uderzenie odejmuje HP równe sile gracza z `players.yml`. Domyślna siła wynosi 10, minimum to 1. Standardowe obrażenia broni nie wpływają na siłę uderzenia. Cooldown jest wspólny dla uderzeń danego gracza w metiny; domyślnie wynosi sekundę (`settings.hit-cooldown`).
+Ile HP odejmuje przyjęte uderzenie, ustawia się osobno dla każdego typu metina:
+
+| `crystals.<typ>` | Obrażenia jednego uderzenia |
+|---|---|
+| `use-damage-per-hit: true` | `damage-per-hit` (domyślnie 1); siła gracza jest pomijana. |
+| `use-damage-per-hit: false` | Siła gracza z `players.yml` (`/ma`, domyślnie 10). |
+| brak opcji | `true`, jeśli typ ma `damage-per-hit` (configi z 1.0.0), w przeciwnym razie siła gracza (configi z 1.1.0). |
+
+Obrażenia wynoszą zawsze co najmniej 1. Standardowe obrażenia broni nie wpływają na siłę uderzenia. `/metin info` pokazuje tryb obrażeń metina. Cooldown jest wspólny dla uderzeń danego gracza w metiny; domyślnie wynosi sekundę (`settings.hit-cooldown`).
 
 Przy uderzeniu plugin losuje `hit-drops`, `hit-commands` i `hit-pools`. Ostatnie uderzenie dodatkowo losuje `death-drops`, `death-commands` i `death-pools`. Nagrody za zniszczenie dostaje **gracz zadający ostatni cios**, bez podziału między uczestników. Przy pełnym ekwipunku nadmiar przedmiotów wypada obok kryształu i pojawia się komunikat.
 
@@ -69,7 +77,7 @@ Obsługiwane są kody `&`, kolory `&#RRGGBB` i MiniMessage, np. `<gradient:gold:
 | `projectile-hits` | false | Trafienia pociskami graczy. |
 | `nearest-range` | 10.0 | Zasięg szukania najbliższego metinu. |
 
-Typy definiuje sekcja `crystals.<typ>`: `display-name`, `type`, `max-hp`, `respawn-time`, `show-actionbar`, `show-bossbar`, `hologram` oraz nagrody. `death-effects` zawiera `particle`, `sound`, `volume` i `pitch`. Stare nazwy cząsteczek, np. `EXPLOSION_HUGE`, mają obsługiwane odpowiedniki (`EXPLOSION_EMITTER`). Dawne pole `damage-per-hit` jest ignorowane — siła pochodzi z danych gracza.
+Typy definiuje sekcja `crystals.<typ>`: `display-name`, `type`, `max-hp`, `respawn-time`, `show-actionbar`, `show-bossbar`, `hologram` oraz nagrody. `death-effects` zawiera `particle`, `sound`, `volume` i `pitch`. Stare nazwy cząsteczek, np. `EXPLOSION_HUGE`, mają obsługiwane odpowiedniki (`EXPLOSION_EMITTER`). Obrażenia na uderzenie ustawiają `use-damage-per-hit` i `damage-per-hit` (zobacz sekcję o walce powyżej).
 
 ## Hologramy i BossBary
 
@@ -346,4 +354,4 @@ Tagi encji to `simplemetin`, `metin_<configId>` (np. `metin_metin_common`) i `si
 
 Testy uruchamia `mvn test`, pełny build `mvn clean package`. Raporty JUnit są w `target/surefire-reports/`. Osobny zestaw E2E na rzeczywistym Paper 1.21.1 sprawdza walkę, dropy, boosty, uprawnienia, języki, migrację, TextDisplay, spawnery, reload, restart i odtworzenie po awarii. Wyniki oraz lokalizacje zestawu opisuje [TEST_REPORT.md](../TEST_REPORT.md).
 
-Pozostałe starsze pliki opisowe w repozytorium mogą odnosić się do 1.0.0; ten przewodnik opisuje wersję 1.1.0.
+Pozostałe starsze pliki opisowe w repozytorium mogą odnosić się do 1.0.0; ten przewodnik opisuje wersję 1.1.1.
